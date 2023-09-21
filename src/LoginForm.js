@@ -23,7 +23,7 @@ function LoginForm({ setIsAuthenticated }) {
         try {
             // Send a POST request to the authentication endpoint
             const response = await axios.post(
-                'http://172.17.6.223:8000/api-token-auth/',
+                'http://192.168.1.196:8000/api-token-auth/',
                 {
                     username: formData.username,
                     password: formData.password,

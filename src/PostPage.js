@@ -26,7 +26,7 @@ const PostPage = ({ switchToDashboard, users }) => {
         };
 
         try {
-            const response = await axios.post('http://172.17.6.223:8000/posts/', newPost, {
+            const response = await axios.post('http://192.168.1.196:8000/posts/', newPost, {
                 headers: {
                     Authorization: `Token ${token}`,
                 },
@@ -44,7 +44,7 @@ const PostPage = ({ switchToDashboard, users }) => {
 
     const fetchUserSuggestions = async (mentionInput) => {
         try {
-            const response = await axios.get('http://172.17.6.223:8000/users/');
+            const response = await axios.get('http://192.168.1.196:8000/users/');
 
             // Assuming the response data is an array of user objects
             const allUsers = response.data;
