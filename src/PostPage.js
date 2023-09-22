@@ -1,24 +1,24 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import CrossIcon from './cross.png';
-import axios from "axios";
+import axios from 'axios';
+
 const PostPage = ({ switchToDashboard, users }) => {
-    const [newPostContent, setNewPostContent] = useState('');
-    const [posts, setPosts] = useState([]);
+    const [newContent, setNewContent] = useState('');
+    const [items, setItems] = useState([]);
     const [mentionedUsers, setMentionedUsers] = useState([]);
     const [suggestedMentionedUsers, setSuggestedMentionedUsers] = useState([]);
     const [selectedStickyNoteColorIndex, setSelectedStickyNoteColorIndex] = useState(0);
-
-
     const [showStickyNote, setShowStickyNote] = useState(true);
-    const handlePostSubmit = async () => {
-        if (newPostContent.trim() === '') {
+
+    const handleItemSubmit = async () => {
+        if (newContent.trim() === '') {
             return;
         }
 
         const token = localStorage.getItem('token');
 
-        const newPost = {
-            content: newPostContent,
+        const newItem = {
+            content: newContent,
             date_posted: new Date().toISOString(),
             author: 'User123', // Replace with actual user info
             mentioned_users: mentionedUsers.map((user) => user.name),
@@ -26,7 +26,7 @@ const PostPage = ({ switchToDashboard, users }) => {
         };
 
         try {
-            const response = await axios.post('http://192.168.1.196:8000/posts/', newPost, {
+            const response = await axios.post('http://192.168.1.196:8000/posts/', newItem, {
                 headers: {
                     Authorization: `Token ${token}`,
                 },
@@ -37,10 +37,10 @@ const PostPage = ({ switchToDashboard, users }) => {
 
             // Rest of the code...
         } catch (error) {
-            // Error handling code...
+            // Handle errors here
+            console.error('Error posting item:', error);
         }
     };
-
 
     const fetchUserSuggestions = async (mentionInput) => {
         try {
@@ -66,10 +66,9 @@ const PostPage = ({ switchToDashboard, users }) => {
         }
     };
 
-
     const handleInputChange = (event) => {
         const inputText = event.target.value;
-        setNewPostContent(inputText);
+        setNewContent(inputText);
 
         if (inputText.length >= 3 && inputText.includes('@')) {
             const lastMentionStart = inputText.lastIndexOf('@');
@@ -82,25 +81,21 @@ const PostPage = ({ switchToDashboard, users }) => {
         }
     };
 
-
-
-
     const handleMentionClick = (user) => {
-        const mention = `@${user.username}`; // Use `user.username` instead of `user.name`
-        const lastMentionStart = newPostContent.lastIndexOf('@');
+        const mention = `@${user.username}`;
+        const lastMentionStart = newContent.lastIndexOf('@');
 
         if (lastMentionStart >= 0) {
-            const preMentionText = newPostContent.substring(0, lastMentionStart);
+            const preMentionText = newContent.substring(0, lastMentionStart);
             const updatedContent = preMentionText + mention + ' ';
-            setNewPostContent(updatedContent);
+            setNewContent(updatedContent);
         } else {
-            setNewPostContent(mention + ' ');
+            setNewContent(mention + ' ');
         }
         setMentionedUsers([...mentionedUsers, user]);
         setSuggestedMentionedUsers([]);
     };
 
-    // Get the selected color from the selected index
     const getStickyNoteColor = () => {
         return stickyNoteColors[selectedStickyNoteColorIndex];
     };
@@ -109,25 +104,21 @@ const PostPage = ({ switchToDashboard, users }) => {
         return stickyNoteColors1[selectedStickyNoteColorIndex];
     };
 
-    // Handle color change
     const handleColorChange = (colorIndex) => {
         setSelectedStickyNoteColorIndex(colorIndex);
     };
 
     useEffect(() => {
-        // Show sticky note background when scrolling up
         const handleScroll = () => {
             setShowStickyNote(window.scrollY <= 0);
         };
 
         window.addEventListener('scroll', handleScroll);
 
-        // Clean up event listener on unmount
         return () => {
             window.removeEventListener('scroll', handleScroll);
         };
     }, []);
-
 
     const stickyNoteColors = [
         '#FC85BDB7',
@@ -210,13 +201,25 @@ const PostPage = ({ switchToDashboard, users }) => {
                             transformOrigin: 'bottom left', // Set the rotation origin
                         }}
                     />
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: '0',
+                            left: '0',
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: getStickyNoteColor(),
+                            opacity: '1%', // Adjust the opacity as needed
+                            zIndex: '-1', // Place it behind the textarea
+                            borderRadius: '11px',
+                        }} />
                     <textarea
                         placeholder =" @mention
-                     Write your post here..."
-                        value={newPostContent}
+                     Write your confession here..."
+                        value={newContent}
                         onChange={handleInputChange}
-                        rows={Math.min(10, newPostContent.split('\n').length + 1)}
-                        style={{  resize: 'none', marginLeft: '25px',border: 'none',borderRadius:'11px',outline: 'none', lineHeight:'1.5',width: 'calc(100% - 25px)', fontSize: '20px' , fontFamily:'Helvetica'}}
+                        rows={Math.min(10, newContent.split('\n').length + 1)}
+                        style={{  position: 'relative', zIndex: '1',backgroundColor: 'transparent',resize: 'none', marginLeft: '25px',border: 'none',borderRadius:'11px',outline: 'none', lineHeight:'1.5',width: 'calc(100% - 25px)', fontSize: '20px' , fontFamily:'Helvetica'}}
                     />
 
                 </div>
@@ -238,7 +241,7 @@ const PostPage = ({ switchToDashboard, users }) => {
                         </ul>
                     )}
                 </div>
-                <button onClick={handlePostSubmit} style={{ position: 'fixed', top: '20px', right: '10px', background: '#000', color: '#fff', border: 'none', borderRadius: '11px', padding: '6px 12px', fontSize: '20px', cursor: 'pointer', fontFamily:'Helvetica' }}><b>Post</b></button>
+                <button onClick={handleItemSubmit} style={{ position: 'fixed', top: '20px', right: '10px', background: '#000', color: '#fff', border: 'none', borderRadius: '11px', padding: '6px 12px', fontSize: '20px', cursor: 'pointer', fontFamily:'Helvetica' }}><b>Confess!</b></button>
             </div>
         </div>
     );
