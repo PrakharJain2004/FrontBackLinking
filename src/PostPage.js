@@ -3,6 +3,20 @@ import CrossIcon from './cross.png';
 import axios from 'axios';
 
 const PostPage = ({ switchToDashboard, users }) => {
+    const colorNameMap = {
+        '#88FD88B7': 'green',
+        '#76fd76': 'green',
+        '#AA89FFB7': 'purple',
+        '#9b76ff': 'purple',
+        '#FFF189B7': 'yellow',
+        '#ffef76': 'yellow',
+        '#FF8989B7': 'red',
+        '#FF7676FF': 'red',
+        '#89E7FFB7': 'blue',
+        '#76cfff': 'blue',
+        '#FC85BDB7': 'pink',
+        '#ff76b3': 'pink',
+    };
     const [newContent, setNewContent] = useState('');
     const [items, setItems] = useState([]);
     const [mentionedUsers, setMentionedUsers] = useState([]);
@@ -21,9 +35,14 @@ const PostPage = ({ switchToDashboard, users }) => {
         const mentionedUserMatch = newContent.match(/@(\w+)/);
         const mentionedUser = mentionedUserMatch ? mentionedUserMatch[1] : null;
 
+        // Get the selected color name from colorNameMap
+        const selectedColorShade = stickyNoteColors[selectedStickyNoteColorIndex];
+        const colorCode = colorNameMap[selectedColorShade];
+
         const newItem = {
             content: newContent,
             mentioned_user: mentionedUser,
+            color_code: colorCode, // Add the color_code field
             date_posted: new Date().toISOString(),
             author: 'User123', // Replace with actual user info
             stickyNoteColor: selectedStickyNoteColorIndex,
@@ -45,6 +64,7 @@ const PostPage = ({ switchToDashboard, users }) => {
             console.error('Error posting item:', error);
         }
     };
+
 
 
 
@@ -112,7 +132,21 @@ const PostPage = ({ switchToDashboard, users }) => {
     };
 
     const handleColorChange = (colorIndex) => {
+        // Get the shades from both color palettes
+        const shade1 = stickyNoteColors[colorIndex];
+        const shade2 = stickyNoteColors1[colorIndex];
+
+        // Combine the shades into a single variable
+        const combinedColor = { shade1, shade2 };
+
+        // Update the selectedStickyNoteColorIndex state
         setSelectedStickyNoteColorIndex(colorIndex);
+
+        // Get the color name from the colorNameMap object
+        const colorName = colorNameMap[shade1] || colorNameMap[shade2];
+
+        // Now you have the color name (e.g., "green") stored in the colorName variable
+        console.log(colorName); // You can use this variable later in your code
     };
 
     useEffect(() => {
