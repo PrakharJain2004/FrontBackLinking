@@ -31,20 +31,18 @@ const PostPage = ({ switchToDashboard, users }) => {
 
         const token = localStorage.getItem('token');
 
-        // Extract mentioned user's name
         const mentionedUserMatch = newContent.match(/@(\w+)/);
         const mentionedUser = mentionedUserMatch ? mentionedUserMatch[1] : null;
 
-        // Get the selected color name from colorNameMap
         const selectedColorShade = stickyNoteColors[selectedStickyNoteColorIndex];
         const colorCode = colorNameMap[selectedColorShade];
 
         const newItem = {
             content: newContent,
             mentioned_user: mentionedUser,
-            color_code: colorCode, // Add the color_code field
+            color_code: colorCode,
             date_posted: new Date().toISOString(),
-            author: 'User123', // Replace with actual user info
+            author: 'User123',
             stickyNoteColor: selectedStickyNoteColorIndex,
         };
 
@@ -55,40 +53,26 @@ const PostPage = ({ switchToDashboard, users }) => {
                 },
             });
 
-            // Assuming you have a function switchToDashboard that handles navigation
-            switchToDashboard(); // Redirect to the dashboard
+            switchToDashboard();
 
-            // Rest of the code...
         } catch (error) {
-            // Handle errors here
             console.error('Error posting item:', error);
         }
     };
 
-
-
-
-
     const fetchUserSuggestions = async (mentionInput) => {
         try {
             const response = await axios.get('http://192.168.1.196:8000/users/');
-
-            // Assuming the response data is an array of user objects
             const allUsers = response.data;
-
-            // Filter users whose usernames contain the mention input
             const filteredUsers = allUsers.filter((user) =>
                 user.username.toLowerCase().includes(mentionInput)
             );
-
-            // Remove duplicates from suggestions
             const uniqueSuggestions = filteredUsers.filter((user, index, self) =>
                 index === self.findIndex((u) => u.username === user.username)
             );
 
             setSuggestedMentionedUsers(uniqueSuggestions);
         } catch (error) {
-            // Handle errors here
             console.error('Error fetching user suggestions:', error);
         }
     };
@@ -100,8 +84,6 @@ const PostPage = ({ switchToDashboard, users }) => {
         if (inputText.length >= 3 && inputText.includes('@')) {
             const lastMentionStart = inputText.lastIndexOf('@');
             const mentionInput = inputText.substring(lastMentionStart + 1).toLowerCase();
-
-            // Use the fetchUserSuggestions function to get user suggestions
             fetchUserSuggestions(mentionInput);
         } else {
             setSuggestedMentionedUsers([]);
@@ -132,21 +114,12 @@ const PostPage = ({ switchToDashboard, users }) => {
     };
 
     const handleColorChange = (colorIndex) => {
-        // Get the shades from both color palettes
         const shade1 = stickyNoteColors[colorIndex];
         const shade2 = stickyNoteColors1[colorIndex];
-
-        // Combine the shades into a single variable
         const combinedColor = { shade1, shade2 };
-
-        // Update the selectedStickyNoteColorIndex state
         setSelectedStickyNoteColorIndex(colorIndex);
-
-        // Get the color name from the colorNameMap object
         const colorName = colorNameMap[shade1] || colorNameMap[shade2];
-
-        // Now you have the color name (e.g., "green") stored in the colorName variable
-        console.log(colorName); // You can use this variable later in your code
+        console.log(colorName);
     };
 
     useEffect(() => {
@@ -178,14 +151,12 @@ const PostPage = ({ switchToDashboard, users }) => {
         '#76fd76',
     ];
 
-
     return (
-        <div >
+        <div>
             <button onClick={switchToDashboard} style={{ position: 'absolute', top: '20px', left: '10px', background: 'none', border: 'none' }}>
                 <img src={CrossIcon} alt="Close" style={{ width: '15px', height: '15px' }} />
             </button>
             <div style={{ marginTop: '110px' }}>
-                {/* Add color selection options */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
                     {stickyNoteColors1.map((color, index) => (
                         <div
@@ -202,8 +173,6 @@ const PostPage = ({ switchToDashboard, users }) => {
                             }}
                         />
                     ))}
-
-
                 </div>
                 <div
                     style={{
@@ -222,24 +191,22 @@ const PostPage = ({ switchToDashboard, users }) => {
                 >
                     <div
                         style={{
-
                             borderBottom:'2px solid #000',
-
                             borderRight:'1px solid #000',
                             borderTopRightRadius: '0px',
                             borderTopLeftRadius: '30px',
                             borderBottomRightRadius: '11px',
                             borderBottomLeftRadius: '0px',
                             position: 'absolute',
-                            bottom: '-0px', // Adjust as needed
-                            left: '27px', // Adjust as needed
-                            width: '30px', // Adjust as needed
-                            height: '30px', // Adjust as needed
-                            background: getStickyNoteColor1(), // Use the same color as sticky note
-                            clipPath: 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%, 0% 75%)', // Create fold effect
+                            bottom: '-0px',
+                            left: '27px',
+                            width: '30px',
+                            height: '30px',
+                            background: getStickyNoteColor1(),
+                            clipPath: 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%, 0% 75%)',
                             zIndex: '0',
-                            transform: 'rotate(-81deg)', // Rotate the folded corner
-                            transformOrigin: 'bottom left', // Set the rotation origin
+                            transform: 'rotate(-81deg)',
+                            transformOrigin: 'bottom left',
                         }}
                     />
                     <div
@@ -250,23 +217,21 @@ const PostPage = ({ switchToDashboard, users }) => {
                             width: '100%',
                             height: '100%',
                             backgroundColor: getStickyNoteColor(),
-                            opacity: '1%', // Adjust the opacity as needed
-                            zIndex: '-1', // Place it behind the textarea
+                            opacity: '1%',
+                            zIndex: '-1',
                             borderRadius: '11px',
-                        }} />
+                        }}
+                    />
                     <textarea
-                        placeholder =" @mention
-                     Write your confession here..."
+                        placeholder="@mention Write your confession here..."
                         value={newContent}
                         onChange={handleInputChange}
                         rows={Math.min(10, newContent.split('\n').length + 1)}
                         style={{  position: 'relative', zIndex: '1',backgroundColor: 'transparent',resize: 'none', marginLeft: '25px',border: 'none',borderRadius:'11px',outline: 'none', lineHeight:'1.5',width: 'calc(100% - 25px)', fontSize: '20px' , fontFamily:'Helvetica'}}
                     />
-
                 </div>
                 <div>
                     {suggestedMentionedUsers.length > 0 && (
-
                         <ul>
                             {suggestedMentionedUsers.map((user, index) => (
                                 <li key={index} style={{ display: 'flex', alignItems: 'center',borderBottom: '1px solid #ccc', padding: '0px 0',position: 'relative',left: '-20px' }} onClick={() => handleMentionClick(user)}>
