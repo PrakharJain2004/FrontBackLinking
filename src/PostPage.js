@@ -17,11 +17,15 @@ const PostPage = ({ switchToDashboard, users }) => {
 
         const token = localStorage.getItem('token');
 
+        // Extract mentioned user's name
+        const mentionedUserMatch = newContent.match(/@(\w+)/);
+        const mentionedUser = mentionedUserMatch ? mentionedUserMatch[1] : null;
+
         const newItem = {
             content: newContent,
+            mentioned_user: mentionedUser,
             date_posted: new Date().toISOString(),
             author: 'User123', // Replace with actual user info
-            mentioned_users: mentionedUsers.map((user) => user.name),
             stickyNoteColor: selectedStickyNoteColorIndex,
         };
 
@@ -41,6 +45,9 @@ const PostPage = ({ switchToDashboard, users }) => {
             console.error('Error posting item:', error);
         }
     };
+
+
+
 
     const fetchUserSuggestions = async (mentionInput) => {
         try {
