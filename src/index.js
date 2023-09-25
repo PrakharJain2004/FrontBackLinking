@@ -109,7 +109,7 @@ const App = () => {
     return (
         <div>
             <nav>
-                {windowWidth <= 768 && (
+                {isAuthenticated && windowWidth <= 768 && (
                     <div style={{ display: 'flex', justifyContent: 'space-around', fontSize: '33px', borderTop: '1px solid #808080', padding: '13px', position: 'fixed', bottom: '0', left: '0', right: '0', backgroundColor: '#ffffff', zIndex: '100', width: '100%',
                         boxSizing: 'border-box', }}>
                         <img src={homeIcon} onClick={switchToDashboard} style={{ width: '31px', height: '31px' }} />
