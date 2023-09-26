@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import homeIcon from './logo.svg';
+import rvclogo from './rvclogo.png';
 
 function LoginForm({ setIsAuthenticated }) {
     const [formData, setFormData] = useState({
@@ -58,7 +58,7 @@ function LoginForm({ setIsAuthenticated }) {
             // Store the token in local storage
             localStorage.setItem('token', token);
 
-            console.log('Token stored in local storage:', token);
+            // console.log('Token stored in local storage:', token);
 
             // Update the authentication status
             setIsAuthenticated(true);
@@ -142,7 +142,7 @@ function LoginForm({ setIsAuthenticated }) {
         <div style={{backgroundColor:'#fff',display: 'flex', flexDirection: 'column', justifyContent:'center', alignItems: 'center' }} >
             <style>{gradientShadowAnimation}</style>
 
-            <img src={homeIcon} style={{ width: '100px', marginBottom: '80px',marginTop: '40px', }} />
+            <img src={rvclogo} style={{height:'250px', width: '250px', marginBottom: '-10px',marginTop: '-30px', justifyContent:'center', alignItems: 'center', position: 'relative', }} />
             <div style={{position:'relative', top:'-30px',  }}>
                 <button style={{ marginRight: '20px', fontSize: '15px',fontFamily: 'Helvetica' ,  padding: '0.7em 1.7em', fontsize: '18px', borderRadius: '0.5em', background: '#e8e8e8', border: '1px solid #e8e8e8', boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff', backgroundColor: isSignup ? '' : '#000', color: isSignup ? '' : 'white', }} onClick={() => handleTabChange(false)}><b>Log In</b></button>
                 <button style={{  fontSize: '15px',fontFamily: 'Helvetica' ,  padding: '0.7em 1.7em', fontsize: '18px', borderRadius: '0.5em', background: '#e8e8e8', border: '1px solid #e8e8e8', boxShadow: '6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff',backgroundColor: isSignup ? '#000' : '', color: isSignup ? 'white' : '', }} onClick={() => handleTabChange(true)}><b>Sign Up</b></button>

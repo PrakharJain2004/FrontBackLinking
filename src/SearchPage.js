@@ -40,6 +40,14 @@ const SearchPage = () => {
         setSearchQuery(query);
     };
 
+    // Function to format the matched part of a string with bold
+    const formatMatchingText = (text, query) => {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.split(regex).map((part, index) =>
+            regex.test(part) ? <b key={index}>{part}</b> : part
+        );
+    };
+
     return (
         <div>
             <input
@@ -100,7 +108,7 @@ const SearchPage = () => {
                                         margin: '10px',
                                     }}
                                 >
-                                    <b>@{user.username}</b>
+                                    <b>@{formatMatchingText(user.username, searchQuery)}</b>
                                 </p>
                                 <p
                                     style={{
@@ -112,7 +120,7 @@ const SearchPage = () => {
                                         margin: '10px',
                                     }}
                                 >
-                                    {user.first_name} {user.last_name}
+                                    {formatMatchingText(user.first_name, searchQuery)} {formatMatchingText(user.last_name, searchQuery)}
                                 </p>
                             </div>
                         </div>

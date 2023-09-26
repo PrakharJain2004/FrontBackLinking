@@ -119,7 +119,7 @@ const PostPage = ({ switchToDashboard, users }) => {
         const combinedColor = { shade1, shade2 };
         setSelectedStickyNoteColorIndex(colorIndex);
         const colorName = colorNameMap[shade1] || colorNameMap[shade2];
-        console.log(colorName);
+        // console.log(colorName);
     };
 
     useEffect(() => {
