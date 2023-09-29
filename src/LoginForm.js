@@ -58,7 +58,7 @@ function LoginForm({ setIsAuthenticated }) {
             // Store the token in local storage
             localStorage.setItem('token', token);
 
-            // console.log('Token stored in local storage:', token);
+            console.log('Token stored in local storage:', token);
 
             // Update the authentication status
             setIsAuthenticated(true);

@@ -31,31 +31,41 @@ const PostPage = ({ switchToDashboard, users }) => {
 
         const token = localStorage.getItem('token');
 
+        // Extract mentioned user's name
         const mentionedUserMatch = newContent.match(/@(\w+)/);
-        const mentionedUser = mentionedUserMatch ? mentionedUserMatch[1] : null;
+        const mentionedUser = mentionedUserMatch ? mentionedUserMatch[1] : null; // If no mention, set it to null
 
+        // Get the selected color name from colorNameMap
         const selectedColorShade = stickyNoteColors[selectedStickyNoteColorIndex];
         const colorCode = colorNameMap[selectedColorShade];
 
-        const newItem = {
+        // Create the payload based on whether a mentioned user is present
+        const payload = {
             content: newContent,
-            mentioned_user: mentionedUser,
             color_code: colorCode,
             date_posted: new Date().toISOString(),
-            author: 'User123',
+            author: '', // Replace with actual user info
             stickyNoteColor: selectedStickyNoteColorIndex,
         };
 
+        // Include mentioned_user field only if mentionedUser is not null
+        if (mentionedUser !== null) {
+            payload.mentioned_user = mentionedUser;
+        }
+
         try {
-            const response = await axios.post('http://192.168.1.196:8000/posts/', newItem, {
+            const response = await axios.post('http://192.168.1.196:8000/posts/', payload, {
                 headers: {
                     Authorization: `Token ${token}`,
                 },
             });
 
-            switchToDashboard();
+            // Assuming you have a function switchToDashboard that handles navigation
+            switchToDashboard(); // Redirect to the dashboard
 
+            // Rest of the code...
         } catch (error) {
+            // Handle errors here
             console.error('Error posting item:', error);
         }
     };
