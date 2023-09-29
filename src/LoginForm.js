@@ -8,6 +8,15 @@ function LoginForm({ setIsAuthenticated }) {
         password: '',
     });
 
+    const checkTokenOnPageLoad = () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            // Check if the token is valid (you may need to implement token validation logic)
+            // If it's valid, set the authentication status to true
+            setIsAuthenticated(true);
+        }
+    };
+
     const [signupData, setSignupData] = useState({
         email: '',
         firstname: '',
@@ -85,6 +94,9 @@ function LoginForm({ setIsAuthenticated }) {
     useEffect(() => {
         // Disable scrolling when the component mounts
         document.body.style.overflow = 'hidden';
+
+        // Check for a valid token when the component mounts
+        checkTokenOnPageLoad();
 
         // Re-enable scrolling when the component unmounts
         return () => {
