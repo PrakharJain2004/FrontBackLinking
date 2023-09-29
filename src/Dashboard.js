@@ -21,6 +21,7 @@ const Dashboard = ({ user }) => {
     const [commentCounts, setCommentCounts] = useState({});
     const authToken = localStorage.getItem('token');
 
+
     const fetchUserDetails = (userId) => {
         return axios.get(`http://192.168.1.196:8000/users/${userId}/`, {
             headers: {
@@ -92,11 +93,43 @@ const Dashboard = ({ user }) => {
                     };
                 });
                 setPosts(postsWithColors);
+
+                // Fetch comment counts for each post
+                const commentCountPromises = postsWithColors.map((post) => {
+                    return axios
+                        .get(`http://192.168.1.196:8000/comments/comments_on_post/${post.id}/`, {
+                            headers: {
+                                Authorization: `Token ${authToken}`,
+                            },
+                        })
+                        .then((response) => {
+                            const count = response.data.length;
+                            return { postId: post.id, count };
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching comment count:', error);
+                            return { postId: post.id, count: 0 };
+                        });
+                });
+
+                // Wait for all comment count requests to complete
+                Promise.all(commentCountPromises)
+                    .then((counts) => {
+                        // Create an object with post IDs as keys and comment counts as values
+                        const commentCountsObject = {};
+                        counts.forEach((countObj) => {
+                            commentCountsObject[countObj.postId] = countObj.count;
+                        });
+                        setCommentCounts(commentCountsObject);
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching comment counts:', error);
+                    });
             })
             .catch((error) => {
                 console.error('Error fetching data:', error);
             });
-    }, []);
+    }, [authToken]);
 
     const handleLikeDislike = (confessionId) => {
         const newLikeState = { ...likeState };
@@ -188,6 +221,7 @@ const Dashboard = ({ user }) => {
                     whiteSpace: 'pre-line',
                     overflow: 'hidden',
                     overflowWrap: 'break-word',
+                    display: selectedConfessionId === confession.id || !isCommentDropdownOpen ? 'block' : 'none',
                 }}>
                     <div style={{ zIndex: '1', fontFamily: 'Helvetica', position: 'relative' }}>
                         <p style={{
@@ -210,9 +244,10 @@ const Dashboard = ({ user }) => {
                                 border: 'none',
                             }}>
                             <img src={commenticon} style={{ height: '25px', width: '25px' }} />
-                            <span style={{ marginLeft: '4px',fontFamily: 'Helvetica', position: 'relative', top:'-7px' }}>
-                            {formatCommentCount(commentCounts[confession.id] || 0)}
-                                </span>
+                            <span style={{ marginLeft: '4px', fontFamily: 'Helvetica', position: 'relative', top: '-7px' }}>
+                                {formatCommentCount(commentCounts[confession.id] || 0)}
+                            </span>
+
                         </button>
                         {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
                             <div style={{
