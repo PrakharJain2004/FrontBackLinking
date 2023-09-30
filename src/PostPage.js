@@ -54,7 +54,7 @@ const PostPage = ({ switchToDashboard, users }) => {
         }
 
         try {
-            const response = await axios.post('http://192.168.1.196:8000/posts/', payload, {
+            const response = await axios.post('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/', payload, {
                 headers: {
                     Authorization: `Token ${token}`,
                 },
@@ -72,7 +72,7 @@ const PostPage = ({ switchToDashboard, users }) => {
 
     const fetchUserSuggestions = async (mentionInput) => {
         try {
-            const response = await axios.get('http://192.168.1.196:8000/users/');
+            const response = await axios.get('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/');
             const allUsers = response.data;
             const filteredUsers = allUsers.filter((user) =>
                 user.username.toLowerCase().includes(mentionInput)

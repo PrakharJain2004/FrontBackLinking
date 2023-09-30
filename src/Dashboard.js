@@ -38,7 +38,7 @@ const Dashboard = ({ user }) => {
 
         // Make a POST request to the API endpoint with token authentication
         axios
-            .post('http://192.168.1.196:8000/comments/', commentData, {
+            .post('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/', commentData, {
                 headers: {
                     Authorization: `Token ${authToken}`,
                 },
@@ -72,7 +72,7 @@ const Dashboard = ({ user }) => {
     };
 
     const fetchUserDetails = (userId) => {
-        return axios.get(`http://192.168.1.196:8000/users/${userId}/`, {
+        return axios.get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
             headers: {
                 Authorization: `Token ${authToken}`,
             },
@@ -127,7 +127,7 @@ const Dashboard = ({ user }) => {
         const authToken = localStorage.getItem('token');
 
         axios
-            .get('http://192.168.1.196:8000/posts/', {
+            .get('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/', {
                 headers: {
                     Authorization: `Token ${authToken}`,
                 },
@@ -146,7 +146,7 @@ const Dashboard = ({ user }) => {
                 // Fetch comment counts for each post
                 const commentCountPromises = postsWithColors.map((post) => {
                     return axios
-                        .get(`http://192.168.1.196:8000/comments/comments_on_post/${post.id}/`, {
+                        .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
                             headers: {
                                 Authorization: `Token ${authToken}`,
                             },
@@ -195,7 +195,7 @@ const Dashboard = ({ user }) => {
         } else {
             // Open the comment section
             axios
-                .get(`http://192.168.1.196:8000/comments/comments_on_post/${confession.id}/`, {
+                .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${confession.id}/`, {
                     headers: {
                         Authorization: `Token ${authToken}`, // Include any required authentication headers
                     },
