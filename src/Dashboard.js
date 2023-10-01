@@ -45,7 +45,7 @@ const Dashboard = ({ user }) => {
             })
             .then((response) => {
                 // Handle successful comment submission
-                console.log('Comment posted successfully:', response.data);
+                // console.log('Comment posted successfully:', response.data);
 
                 // Step 1: Add the new comment to the selectedConfessionComments state
                 const newCommentData = {

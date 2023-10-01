@@ -25,6 +25,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
     const [newBio, setNewBio] = useState(user.bio);
     const [confessions, setConfessions] = useState([]);
     const [mentions, setMentions] = useState([]);
+    const token = localStorage.getItem('token');
 
 
     const fetchConfessions = async () => {
@@ -49,13 +50,112 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
             // Extract the confessions data from the API response
             const confessionsData = response.data.map((confession) => ({
                 ...confession,
-                backgroundColor: getColorSet(confession.color_code)[0], // Get the background color based on color_code
+                backgroundColor: getColorSet(confession.color_code)[0],
+                post_id: confession.id,// Get the background color based on color_code
             }));
 
             // Once you have the modified data, you can set it to your component's state
             setConfessions(confessionsData);
+
+            const commentCountPromises = confessionsData.map((post) => {
+                return axios
+                    .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
+                        headers: {
+                            Authorization: `Token ${token}`,
+                        },
+                    })
+                    .then((response) => {
+                        const count = response.data.length;
+                        return { postId: post.id, count };
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching comment count:', error);
+                        return { postId: post.id, count: 0 };
+                    });
+            });
+
+            Promise.all(commentCountPromises)
+                .then((counts) => {
+                    // Create an object with post IDs as keys and comment counts as values
+                    const commentCountsObject = {};
+                    counts.forEach((countObj) => {
+                        commentCountsObject[countObj.postId] = countObj.count;
+                    });
+                    setCommentCounts(commentCountsObject);
+                })
+                .catch((error) => {
+                    console.error('Error fetching comment counts:', error);
+                });
         } catch (error) {
             console.error('Error fetching confessions:', error);
+        }
+    };
+
+    const toggleCommentDropdown = (confession) => {
+        if (isCommentDropdownOpen) {
+            // Close the comment section
+            setCommentDropdownOpen(false);
+            setSelectedConfessionComments([]);
+            setSelectedConfessionId(null);
+        } else {
+            // Open the comment section
+            axios
+                .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${confession.id}/`, {
+                    headers: {
+                        Authorization: `Token ${token}`, // Include any required authentication headers
+                    },
+                })
+                .then((response) => {
+                    // Fetch user details for each comment
+                    const commentPromises = response.data.map((comment) => {
+                        return fetchUserDetails(comment.user_commented).then((userResponse) => {
+                            return {
+                                ...comment,
+                                user_commented: userResponse.data, // Replace user_commented ID with user details
+                            };
+                        });
+                    });
+
+                    // Wait for all user detail requests to complete
+                    Promise.all(commentPromises)
+                        .then((commentsWithUsers) => {
+                            setSelectedConfessionComments(commentsWithUsers);
+                            setSelectedConfessionId(confession.id);
+                            setCommentDropdownOpen(true);
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching comments:', error);
+                        });
+                })
+                .catch((error) => {
+                    console.error('Error fetching comments:', error);
+                });
+        }
+    };
+
+    const fetchUserDetails = (userId) => {
+        return axios.get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
+            headers: {
+                Authorization: `Token ${token}`,
+            },
+        });
+    };
+
+    useEffect(() => {
+        const counts = {};
+        user.confessions.forEach((confession) => {
+            const comments = user.comments.filter((comment) => comment.post_id === confession.id);
+            counts[confession.id] = comments.length;
+        });
+        setCommentCounts(counts);
+    }, [user.confessions, user.comments]);
+    const formatCommentCount = (count) => {
+        if (count < 1000) {
+            return count.toString();
+        } else if (count < 1000000) {
+            return (count / 1000).toFixed(1) + 'K';
+        } else {
+            return (count / 1000000).toFixed(1) + 'M';
         }
     };
 
@@ -218,38 +318,6 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
         const newLikeState = { ...likeState };
         newLikeState[confessionId] = !newLikeState[confessionId];
         setLikeState(newLikeState);
-    };
-
-    const toggleCommentDropdown = (confession) => {
-        if (isCommentDropdownOpen) {
-            setCommentDropdownOpen(false);
-            setSelectedConfessionComments([]);
-            setSelectedConfessionId(null);
-        } else {
-            const comments = user.comments.filter((comment) => comment.post_id === confession.id);
-            setSelectedConfessionComments(comments);
-            setSelectedConfessionId(confession.id);
-            setCommentDropdownOpen(true);
-        }
-    };
-
-    useEffect(() => {
-        const counts = {};
-        user.confessions.forEach((confession) => {
-            const comments = user.comments.filter((comment) => comment.post_id === confession.id);
-            counts[confession.id] = comments.length;
-        });
-        setCommentCounts(counts);
-    }, [user.confessions, user.comments]);
-    const formatCommentCount = (count) => {
-        if (count < 1000) {
-            return count.toString();
-        } else if (count < 1000000) {
-            return (count / 1000).toFixed(1) + 'K';
-        } else {
-            return (count / 1000000).toFixed(1) + 'M';
-        }
-
     };
 
 
