@@ -7,7 +7,7 @@ import CrossIcon from './cross.png';
 import axios from 'axios';
 
 
-const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,usersData}) => {
+const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [showStickyNote, setShowStickyNote] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,12 +21,13 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
     const [showAboutOptions, setShowAboutOptions] = useState(false);
     const [showEditProfileForm, setShowEditProfileForm] = useState(false);
     const [profilePic, setProfilePic] = useState(null);
-    const [newName, setNewName] = useState(user.name);
-    const [newBio, setNewBio] = useState(user.bio);
     const [confessions, setConfessions] = useState([]);
     const [mentions, setMentions] = useState([]);
     const token = localStorage.getItem('token');
     const [newComment, setNewComment] = useState('');
+    const [userData, setUserData] = useState(null);
+    const [newName, setNewName] = useState(user.name);
+    const [newBio, setNewBio] = useState(user.bio);
 
 
     const fetchConfessions = async () => {
@@ -209,6 +210,53 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
         setNewComment(event.target.value);
     };
 
+    const fetchUserData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
+
+            // First, fetch user data from the first endpoint
+            const firstEndpointResponse = await axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/profile-pics/by-username/${username}/`, {
+                headers: {
+                    Authorization: `Token ${token}`,
+                },
+            });
+
+            const userProfileData = firstEndpointResponse.data;
+
+            // Then, use the 'user' ID from the first endpoint to fetch the user's name from the second endpoint
+            const secondEndpointResponse = await axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userProfileData.user}/`, {
+                headers: {
+                    Authorization: `Token ${token}`,
+                },
+            });
+
+            const userDataFromSecondEndpoint = secondEndpointResponse.data;
+
+            // Combine the first and last name to create the fullName
+            const fullName = `${userDataFromSecondEndpoint.first_name || ''} ${userDataFromSecondEndpoint.last_name || ''}`;
+
+            // Update the state with the user profile data
+            setUserData({
+                id: userProfileData.id,
+                bio: userProfileData.bio,
+                profile_picture: userProfileData.profile_picture,
+                user: userProfileData.user,
+                fullName, // Use the corrected fullName
+                // Add other fields as needed
+            });
+        } catch (error) {
+            console.error('Error fetching user profile data:', error);
+        }
+    };
+
+
+    // Fetch user profile data when the component mounts
+    useEffect(() => {
+        fetchUserData();
+    }, []);
+
+
 
     const fetchMentions = async () => {
         try {
@@ -240,6 +288,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
             console.error('Error fetching mentions:', error);
         }
     };
+
 
     useEffect(() => {
         fetchMentions();
@@ -398,12 +447,12 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,
 
         <div style={{ marginBottom: windowWidth <= 768 ? '60px' : '0' }}>
             <img src={menuIcon} alt="Settings" style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer',width: '30px', height: '30px' }} onClick={handleSettingsClick} /><br/>
-            <p style={{fontFamily: 'Helvetica', fontSize: '30px'}}><b>{user.name}</b> </p>
+            <p style={{fontFamily: 'Helvetica', fontSize: '30px'}}><b>{userData ? userData.fullName : 'Loading...'}</b> </p>
             <div style={{ position: 'relative' }}>
-                <img src={user.image} style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',width: '70px', height: '70px', borderRadius: '50%', position:'absolute', top: '-60px', right: '14px'}}/>
+                <img src={userData ? userData.profile_picture : 'Loading...'} style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',width: '70px', height: '70px', borderRadius: '50%', position:'absolute', top: '-60px', right: '14px'}}/>
                 <br/>
                 <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-35px'}}>{user.branch}</p>
-                <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-10px'}}>{user.bio}</p>
+                <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-10px'}}>{userData ? userData.bio : 'Loading...'}</p>
             </div>
 
             {showDropdown && (
