@@ -64,10 +64,11 @@ function LoginForm({ setIsAuthenticated }) {
             // Extract the token from the response data
             const { token } = response.data;
 
-            // Store the token in local storage
+            // Store the token and username in local storage
             localStorage.setItem('token', token);
+            localStorage.setItem('username', formData.username);
 
-            console.log('Token stored in local storage:', token);
+            console.log('Token and username stored in local storage:', token, formData.username);
 
             // Update the authentication status
             setIsAuthenticated(true);

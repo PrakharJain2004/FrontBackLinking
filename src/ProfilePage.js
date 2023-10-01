@@ -1,12 +1,119 @@
 import React, {useEffect, useState} from 'react';
 import menuIcon from './menuicon.png';
+import likeicon from "./likeicon.png";
+import dislikeicon from "./dislikeicon.png";
+import commenticon from "./commenticon.png";
+import CrossIcon from './cross.png';
+import axios from 'axios';
 
-const ProfilePage = ({user ,activeTab='mentioned', handleTabClick,setUserData,usersData}) => {
+
+const ProfilePage = ({user ,activeTab='confessions', handleTabClick,setUserData,usersData}) => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [showStickyNote, setShowStickyNote] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredFriends, setFilteredFriends] = useState(user.friends);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [likeState, setLikeState] = useState({});
+    const [isCommentDropdownOpen, setCommentDropdownOpen] = useState(false);
+    const [selectedConfessionComments, setSelectedConfessionComments] = useState([]);
+    const [selectedConfessionId, setSelectedConfessionId] = useState(null);
+    const [commentCounts, setCommentCounts] = useState({});
+    const [showAboutOptions, setShowAboutOptions] = useState(false);
+    const [showEditProfileForm, setShowEditProfileForm] = useState(false);
+    const [profilePic, setProfilePic] = useState(null);
+    const [newName, setNewName] = useState(user.name);
+    const [newBio, setNewBio] = useState(user.bio);
+    const [confessions, setConfessions] = useState([]);
+    const [mentions, setMentions] = useState([]);
+
+
+    const fetchConfessions = async () => {
+        try {
+            // Retrieve the authentication token from local storage
+            const token = localStorage.getItem('token');
+
+            // Retrieve the username from local storage or wherever it's stored
+            const username = localStorage.getItem('username'); // Replace with your actual way of getting the username
+
+            // Create an Axios instance with the token in the headers
+            const axiosInstance = axios.create({
+                baseURL: 'https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/api/',
+                headers: {
+                    Authorization: `Token ${token}`, // Include the token in the headers
+                },
+            });
+
+            // Make a GET request to your Django backend API using the Axios instance
+            const response = await axiosInstance.get(`posts-by-author/${username}/`);
+
+            // Extract the confessions data from the API response
+            const confessionsData = response.data.map((confession) => ({
+                ...confession,
+                backgroundColor: getColorSet(confession.color_code)[0], // Get the background color based on color_code
+            }));
+
+            // Once you have the modified data, you can set it to your component's state
+            setConfessions(confessionsData);
+        } catch (error) {
+            console.error('Error fetching confessions:', error);
+        }
+    };
+
+
+    const fetchMentions = async () => {
+        try {
+            // Retrieve the authentication token from local storage
+            const token = localStorage.getItem('token');
+
+            // Retrieve the username from local storage or wherever it's stored
+            const username = localStorage.getItem('username'); // Replace with your actual way of getting the username
+
+            // Create an Axios instance with the token in the headers
+            const axiosInstance = axios.create({
+                baseURL: 'https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/api/',
+                headers: {
+                    Authorization: `Token ${token}`, // Include the token in the headers
+                },
+            });
+
+            // Make a GET request to your Django backend API using the Axios instance
+            const response = await axiosInstance.get(`mentioned-posts/${username}/`);
+
+            // Once you have the response, you can set it to your component's state
+            const mentionsWithColors = response.data.map((mention, index) => ({
+                ...mention,
+                colors: getColorSet(mention.color_code), // Get the color set based on color_code
+            }));
+
+            setMentions(mentionsWithColors);
+        } catch (error) {
+            console.error('Error fetching mentions:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchMentions();
+    }, []);
+
+
+    useEffect(() => {
+        fetchConfessions();
+    }, []);
+
+    const getColorSet = (colorCode) => {
+        const colorMap = {
+            pink: ['#FC85BDB7', '#ff76b3'],
+            blue: ['#89E7FFB7', '#76cfff'],
+            red: ['#FF8989B7', '#FF7676FF'],
+            yellow: ['#FFF189B7', '#ffef76'],
+            purple: ['#AA89FFB7', '#9b76ff'],
+            green: ['#88FD88B7', '#76fd76'],
+        };
+
+        return colorMap[colorCode] || colorMap['default']; // Provide a default color set if colorCode is not found
+    };
+
+
 
     const formatTimeDifference = (confessionDate,mentionDate) => {
         const currentDate = new Date();
@@ -96,10 +203,77 @@ const ProfilePage = ({user ,activeTab='mentioned', handleTabClick,setUserData,us
         setShowDropdown(!showDropdown);
     };
 
+    const handleAboutClick = () => {
+        // Toggle the About options
+        setShowAboutOptions(!showAboutOptions);
+    };
+
     const handleLogout = () => {
         // Implement your logout logic here
         // For example, clear user session, redirect, etc.
         console.log('Logout clicked');
+    };
+
+    const handleLikeDislike = (confessionId) => {
+        const newLikeState = { ...likeState };
+        newLikeState[confessionId] = !newLikeState[confessionId];
+        setLikeState(newLikeState);
+    };
+
+    const toggleCommentDropdown = (confession) => {
+        if (isCommentDropdownOpen) {
+            setCommentDropdownOpen(false);
+            setSelectedConfessionComments([]);
+            setSelectedConfessionId(null);
+        } else {
+            const comments = user.comments.filter((comment) => comment.post_id === confession.id);
+            setSelectedConfessionComments(comments);
+            setSelectedConfessionId(confession.id);
+            setCommentDropdownOpen(true);
+        }
+    };
+
+    useEffect(() => {
+        const counts = {};
+        user.confessions.forEach((confession) => {
+            const comments = user.comments.filter((comment) => comment.post_id === confession.id);
+            counts[confession.id] = comments.length;
+        });
+        setCommentCounts(counts);
+    }, [user.confessions, user.comments]);
+    const formatCommentCount = (count) => {
+        if (count < 1000) {
+            return count.toString();
+        } else if (count < 1000000) {
+            return (count / 1000).toFixed(1) + 'K';
+        } else {
+            return (count / 1000000).toFixed(1) + 'M';
+        }
+
+    };
+
+
+
+    const handleEditProfileClick = () => {
+        setShowEditProfileForm(true);
+    };
+
+    const handleEditProfileCancel = () => {
+        setShowEditProfileForm(false);
+    };
+
+    const handleProfilePicChange = (e) => {
+        const file = e.target.files[0];
+        // You can add code here to upload the selected profile picture to a server or display it on the page.
+        setProfilePic(file);
+    };
+
+    const handleNameChange = (e) => {
+        setNewName(e.target.value);
+    };
+
+    const handleBioChange = (e) => {
+        setNewBio(e.target.value);
     };
 
     return (
@@ -108,22 +282,132 @@ const ProfilePage = ({user ,activeTab='mentioned', handleTabClick,setUserData,us
             <img src={menuIcon} alt="Settings" style={{ position: 'absolute', top: '10px', right: '10px', cursor: 'pointer',width: '30px', height: '30px' }} onClick={handleSettingsClick} /><br/>
             <p style={{fontFamily: 'Helvetica', fontSize: '30px'}}><b>{user.name}</b> </p>
             <div style={{ position: 'relative' }}>
-                <img src={user.profileImage} style={{width: '70px', height: '70px', borderRadius: '50%', position:'absolute', top: '-60px', right: '14px'}}/>
+                <img src={user.image} style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',width: '70px', height: '70px', borderRadius: '50%', position:'absolute', top: '-60px', right: '14px'}}/>
                 <br/>
                 <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-35px'}}>{user.branch}</p>
                 <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-10px'}}>{user.bio}</p>
             </div>
+
             {showDropdown && (
-                <div style={{position: 'fixed', bottom: -1, left: 0, height:'50%',width: '100%', backgroundColor: 'white', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.9)', zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'1px solid #000'}}>
+                <div style={{overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'50%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
                     <ul style={{ listStyle: 'none', padding: '0' }}>
+                        <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleEditProfileClick}>Edit profile</li>
+                        {showEditProfileForm && (
+                            <form   style={{  overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'99%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)' }}>
+                                {/* Edit Profile Form */}
+                                <img src={CrossIcon} style={{position: 'absolute', top: '20px', right: '20px', height:'20px',width:'20px'}} onClick={handleEditProfileCancel}/>
+
+                                <input
+                                    type="file"
+                                    id="fileInput"
+                                    accept="image/*"
+                                    onChange={handleProfilePicChange}
+                                    style={{
+                                        display: 'none',
+
+                                    }}
+                                />
+                                <label htmlFor="fileInput">
+                                    <img
+                                        src={profilePic || user.image}
+                                        style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            marginBottom: '15px',
+                                            fontFamily: 'Helvetica',
+                                            width: '150px',
+                                            height: '150px',
+                                            background: 'rgba(255, 252, 255, 0.5)',
+                                            border: '1px solid #ccc',
+                                            fontSize: '10px',
+                                            zIndex: '1',
+                                            borderRadius: '50%',
+                                            position:'absolute',
+                                            left: '50%',
+                                            top: '15%',
+                                            transform: 'translate(-50%, -50%)'
+                                        }}
+                                    />
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Name"
+                                    value={newName}
+                                    onChange={handleNameChange}
+                                    style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                        marginBottom: '15px',
+                                        position:'absolute',
+                                        left: '50%',
+                                        top: '30%',
+                                        transform: 'translate(-50%, -50%)',
+                                        paddingLeft: '18px',
+                                        fontFamily: 'Helvetica',
+                                        width: 'calc(90% - 25px)',
+                                        height: '40px',
+                                        background: 'rgba(255, 255, 255, 0.5)',
+                                        border: '1px solid #ccc',
+                                        fontSize: '18px',
+                                        zIndex: '1',
+                                        borderRadius: '11px',}}
+                                />
+                                <textarea
+                                    placeholder="Bio"
+                                    value={newBio}
+                                    onChange={handleBioChange}
+                                    style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                        marginBottom: '15px',
+                                        paddingLeft: '18px',
+                                        position:'absolute',
+                                        left: '50%',
+                                        top: '41%',
+                                        transform: 'translate(-50%, -50%)',
+                                        fontFamily: 'Helvetica',
+                                        width: 'calc(90% - 25px)',
+                                        height: '100px',
+                                        background: 'rgba(255, 255, 255, 0.5)',
+                                        border: '1px solid #ccc',
+                                        fontSize: '18px',
+                                        zIndex: '1',
+                                        borderRadius: '11px',}}
+                                />
+                                {/* Include the code to submit the updated profile information */}
+                                <button type="submit"
+                                        style={{  position:'absolute', left: '50%', top: '52%',
+                                            transform: 'translate(-50%, -50%)',boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',color:'#fff', fontFamily: 'Helvetica', width: '100px', height: '40px',background:'#000',border:'1px solid #ccc',fontSize:'18px',borderRadius: '11px',}}
+                                >Save</button>
+                            </form>
+                        )}
+                        <li style={{ padding: '15px', cursor: 'pointer', fontFamily: 'Helvetica', fontSize: '18px', color: 'black' }} onClick={handleAboutClick}>About</li>
+                        {showAboutOptions && (
+                            <div style={{position: 'relative', top: '0px', left: 0, height:'150px',width: '100%', backgroundColor: 'white',  zIndex: '100',borderRadius:'11px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
+                                <ul style={{ listStyle: 'none', padding: '0' }}>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleLogout}>About RVConnect</li>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleLogout}>Terms of Use</li>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleLogout}>Privacy Policy</li>
+                                </ul>
+                            </div>
+                        )}
                         <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'red' }} onClick={handleLogout}>Log out</li>
                         {/* Add other options here */}
                     </ul>
                 </div>
             )}
 
+
             <div style={{ display: 'flex', marginTop: '20px' , justifyContent: 'space-between',width: '100%', }}>
 
+                <div
+                    className={`tab ${activeTab === 'confessions' ? 'active' : ''}`}
+                    onClick={() => handleTabClick('confessions')}
+                    style={{
+                        flex: 1,
+                        fontFamily: 'Helvetica', fontSize: '20px',
+                        textAlign: 'center',
+                        color: activeTab === 'confessions' ? '#000' : '#c0c0c0',
+                    }}
+
+                >
+                    <b>Confessions</b>
+                </div>
 
                 <div
                     className={`tab ${activeTab === 'mentioned' ? 'active' : ''}`}
@@ -154,68 +438,357 @@ const ProfilePage = ({user ,activeTab='mentioned', handleTabClick,setUserData,us
             </div>
             <hr />
 
-            {activeTab === 'mentioned' && (
+            {activeTab === 'confessions' && (
                 <>
-                    {user.mentioned.map((mention, index) => (
-                        <div key={index} style={{
-                            borderRadius: '11px',
-                            borderBottomLeftRadius: '30px',
-                            background: getStickyNoteColor(index),
-                            position: 'relative',
-                            top: '0',
-                            zIndex: 'auto',
-                            border: '1px solid #000',
-                            padding: '10px',
-                            margin: '10px',
-                            maxWidth: '100%',
-                            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
-                        }}>
-                            <div
-                                style={{zIndex: '1', fontFamily: 'Helvetica', position: 'relative'}}>
-                                {mention.mentioned_user !== null && <p style={{
-                                    fontFamily: 'Helvetica',
-                                    color: '#000',
-                                    fontSize: '15px',
-                                    position: 'relative',
-                                    top: '-15px'
-                                }}><b>@{mention.mentioned_user}</b></p>}
-                                <p style={{
-                                    position: 'absolute',
-                                    top: '-30px',
-                                    right: '4px',
-                                    color: '#000',
-                                    fontFamily: 'Helvetica'
-                                }}>{formatTimeDifference(mention.date_posted)}</p>
-                                <p style={{
-                                    fontFamily: 'Helvetica',
-                                    position: 'relative',
-                                    left: '27px',
-                                    top: '-30px'
-                                }}>{mention.content}</p>
-                            </div>
-                            <div
-                                style={{
-                                    borderBottom: '2px solid #000',
+                    {confessions.slice().reverse().map((confession, index) => {
+                        // Get the color set based on the color code from the API response
+                        const colorSet = getColorSet(confession.color_code);
+
+                        // Destructure the color set to get the two colors
+                        const [backgroundColor, backgroundColor1] = colorSet || [];
+
+                        return (
+                            <div key={index} style={{
+                                borderRadius: '11px',
+                                borderBottomLeftRadius: '30px',
+                                background: backgroundColor || getStickyNoteColor(index),
+                                position: 'relative',
+                                top: '0',
+                                zIndex: 'auto',
+                                border: '0px solid #000',
+                                padding: '10px',
+                                margin: '10px',
+                                maxWidth: '100%',
+                                boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                whiteSpace: 'pre-line', /* Allow text to wrap to the next line */
+                                overflow: 'hidden', /* Hide overflowing text */
+                                overflowWrap: 'break-word',
+                                display: selectedConfessionId === confession.id || !isCommentDropdownOpen ? 'block' : 'none',
+                            }}>
+                                <div style={{ zIndex: '1', fontFamily: 'Helvetica', position: 'relative' }}>
+                                    <p style={{
+                                        position: 'absolute',
+                                        top: '-15px',
+                                        right: '4px',
+                                        color: '#000',
+                                        fontFamily: 'Helvetica'
+                                    }}>{formatTimeDifference(confession.date_posted)}</p>
+                                    <button
+                                        onClick={() => handleLikeDislike(confession.id)}
+                                        style={{ backgroundColor: 'transparent', border: 'none' }}
+                                    >
+                                        {likeState[confession.id] ? <img src={likeicon} style={{ height: '25px', width: '25px' }} /> : <img src={dislikeicon} style={{ height: '25px', width: '25px' }} />}
+                                    </button>
+                                    <button
+                                        onClick={() => toggleCommentDropdown(confession)}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                        }}>
+                                        <img src={commenticon} style={{ height: '25px', width: '25px' }} />
+                                        <span style={{ marginLeft: '4px', fontFamily: 'Helvetica', position: 'relative', top: '-7px' }}>
+                {formatCommentCount(commentCounts[confession.id] || 0)}
+              </span>
+                                    </button>
+                                    {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
+                                        <div style={{
+                                            bottom: 60,
+                                            overflowY: 'scroll',
+                                            position: 'fixed',
+                                            left: 0,
+                                            height: '43%',
+                                            width: '100%',
+                                            backgroundColor: 'white',
+                                            zIndex: '100',
+                                            borderTopRightRadius: '20px',
+                                            borderTopLeftRadius: '20px',
+                                            border: '0px solid #000',
+                                            boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)',
+                                        }}>
+                                            {selectedConfessionComments.map((comment) => (
+                                                <div style={{
+                                                    padding: '0px 0',
+                                                    borderBottom: '1px solid #ccc',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                }}>
+                                                    <img src={comment.user_commented.profilepic} style={{
+                                                        minWidth: '40px',
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        borderRadius: '50%',
+                                                        marginLeft: '15px',
+                                                        backgroundColor: '#000',
+                                                        position: 'relative',
+                                                        top: '-50px'
+                                                    }} />
+                                                    <div key={comment.id} style={{
+                                                        padding: '15px',
+                                                        whiteSpace: 'pre-line',
+                                                        overflow: 'hidden',
+                                                        overflowWrap: 'break-word',
+                                                    }}>
+                                                        <p style={{
+                                                            fontFamily: 'Helvetica',
+                                                            color: '#000',
+                                                            fontSize: '17px',
+                                                            position: 'relative',
+                                                            top: '4px',
+                                                        }}><b>{comment.user_commented.first_name + comment.user_commented.last_name}</b></p>
+                                                        <p style={{
+                                                            fontFamily: 'Helvetica',
+                                                            color: '#8f8f8f',
+                                                            position: 'relative',
+                                                            top: '-10px',
+                                                            fontSize: '17px',
+                                                        }}>@{comment.user_commented.username}</p>
+                                                        <p style={{
+                                                            fontFamily: 'Helvetica',
+                                                            position: 'relative',
+                                                            top: '-10px',
+                                                            fontSize: '17px',
+                                                            maxWidth: '90%',
+                                                        }}>{comment.comment}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <p style={{
+                                            fontFamily: 'Helvetica',
+                                            position: 'relative',
+                                            left: '27px',
+                                            top: '-10px',
+                                            maxWidth: '87%',
+                                        }}>
+                <span dangerouslySetInnerHTML={{
+                    __html: confession.content.replace(
+                        /@(\w+)/g,
+                        (match, username) => `<b>@${username}</b>`
+                    )
+                }} />
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    borderBottom: '3px solid #000',
                                     borderRight: '1px solid #000',
                                     borderTopRightRadius: '0px',
                                     borderTopLeftRadius: '30px',
                                     borderBottomRightRadius: '11px',
-                                    borderBottomLeftRadius: '0px',
+                                    borderBottomLeftRadius: '2px',
                                     position: 'absolute',
-                                    bottom: '-0px',
-                                    left: '27px',
+                                    bottom: '-0.4px',
+                                    left: '30.5px',
                                     width: '30px',
-                                    height: '30px',
-                                    background: getStickyNoteColor1(index),
+                                    height: '31px',
+                                    background: backgroundColor1 || getStickyNoteColor1(index),
                                     clipPath: 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%, 0% 75%)',
                                     zIndex: '0',
-                                    transform: 'rotate(-81deg)',
+                                    transform: 'rotate(-83.6deg)',
                                     transformOrigin: 'bottom left',
                                 }}
+                                />
+                            </div>
+                        );
+                    })}
+                </>
+            )}
+            {/* Bottom Navigation */}
+            {isCommentDropdownOpen ? (
+
+                <div style={{zIndex:'100', position: 'fixed', bottom: '10px', left: '0px', right: '0px',}}>
+                    <div style={{background:'#fff', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)',borderRadius:'11px', height:'155px',zIndex:'100' ,width:'100%',position:'relative',top:'70px' }}>
+
+                        {/* You can add your textbox and other components here */}
+                        {/* For example, an input field for entering comments */}
+                        <textarea type="text" placeholder="Enter your comment"
+                                  style={{ resize: 'none',whiteSpace: 'pre-wrap', overflowWrap: 'break-word',  paddingBottom:'0px',paddingLeft:'18.5px', fontFamily: 'Helvetica', width:'calc(100% - 21px)', height: '40px',background:'transparent',border:'0px solid #ccc',fontSize:'20px',borderRadius: '0px', position:'relative', top:'10px'}}
+                        />
+                        <button  style={{ float: 'right',right:'10px',position: 'relative', bottom: '-12px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '11px', padding: '6px 12px', fontSize: '15px', cursor: 'pointer', fontFamily:'Helvetica' }}><b>Comment</b></button>
+                    </div>
+                </div>
+
+            ) : (
+                // Render your bottom navigation when the dropdown is closed
+                <div style={{ position: 'fixed', bottom: '0', left: '0', right: '0', backgroundColor: '#333' }}>
+                </div>
+            )}
+
+
+            {activeTab === 'mentioned' && (
+                <>
+                    {mentions.slice().reverse().map((mention, index) => (
+                        <div key={index} style={{
+                            borderRadius: '11px',
+                            borderBottomLeftRadius: '30px',
+                            background: mention.colors[0], // Use the first color from the colors array
+                            position: 'relative',
+                            top: '0',
+                            zIndex: 'auto',
+                            border: '0px solid #000',
+                            padding: '10px',
+                            margin: '10px',
+                            maxWidth: '100%',
+                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                            whiteSpace: 'pre-line', /* Allow text to wrap to the next line */
+                            overflow: 'hidden', /* Hide overflowing text */
+                            overflowWrap: 'break-word',
+                            display: selectedConfessionId === mention.id || !isCommentDropdownOpen ? 'block' : 'none',
+                        }}>
+                            <div style={{ zIndex: '1', fontFamily: 'Helvetica', position: 'relative' }}>
+                                <p style={{
+                                    position: 'absolute',
+                                    top: '-15px',
+                                    right: '4px',
+                                    color: '#000',
+                                    fontFamily: 'Helvetica'
+                                }}>{formatTimeDifference(mention.date_posted)}</p>
+                                <button
+                                    onClick={() => handleLikeDislike(mention.id)}
+                                    style={{ backgroundColor: 'transparent', border: 'none', }}
+                                >
+                                    {likeState[mention.id] ? <img src={likeicon} style={{ height: '25px', width: '25px' }} /> : <img src={dislikeicon} style={{ height: '25px', width: '25px' }} />}
+                                </button>
+                                <button
+                                    onClick={() => toggleCommentDropdown(mention)}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                    }}>
+                                    <img src={commenticon} style={{ height: '25px', width: '25px' }} />
+                                    <span style={{ marginLeft: '4px', fontFamily: 'Helvetica', position: 'relative', top: '-7px' }}>
+                            {formatCommentCount(commentCounts[mention.id] || 0)}
+                        </span>
+                                </button>
+                                {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
+                                    <div style={{
+                                        bottom: 60,
+                                        overflowY: 'scroll',
+                                        position: 'fixed',
+                                        left: 0,
+                                        height: '43%',
+                                        width: '100%',
+                                        backgroundColor: 'white',
+                                        zIndex: '100',
+                                        borderTopRightRadius: '20px',
+                                        borderTopLeftRadius: '20px',
+                                        border: '0px solid #000',
+                                        boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)',
+                                    }}>
+                                        {selectedConfessionComments.map((comment) => (
+                                            <div style={{
+                                                padding: '0px 0',
+                                                borderBottom: '1px solid #ccc',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                            }}>
+                                                <img src={comment.user_commented.profilepic} style={{
+                                                    minWidth: '40px',
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    marginLeft: '15px',
+                                                    backgroundColor: '#000',
+                                                    position: 'relative',
+                                                    top: '-50px'
+                                                }} />
+                                                <div key={comment.id} style={{
+                                                    padding: '15px',
+                                                    whiteSpace: 'pre-line',
+                                                    overflow: 'hidden',
+                                                    overflowWrap: 'break-word',
+                                                }}>
+                                                    <p style={{
+                                                        fontFamily: 'Helvetica',
+                                                        color: '#000',
+                                                        fontSize: '17px',
+                                                        position: 'relative',
+                                                        top: '4px',
+                                                    }}>
+                                                        <b>{comment.user_commented.first_name + comment.user_commented.last_name}</b>
+                                                    </p>
+                                                    <p style={{
+                                                        fontFamily: 'Helvetica',
+                                                        color: '#8f8f8f',
+                                                        position: 'relative',
+                                                        top: '-10px',
+                                                        fontSize: '17px',
+                                                    }}>@{comment.user_commented.username}</p>
+                                                    <p style={{
+                                                        fontFamily: 'Helvetica',
+                                                        position: 'relative',
+                                                        top: '-10px',
+                                                        fontSize: '17px',
+                                                        maxWidth: '90%',
+                                                    }}>{comment.comment}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <p style={{
+                                        fontFamily: 'Helvetica',
+                                        position: 'relative',
+                                        left: '27px',
+                                        top: '-10px',
+                                        maxWidth: '87%',
+                                    }}>
+                            <span dangerouslySetInnerHTML={{
+                                __html: mention.content.replace(
+                                    /@(\w+)/g,
+                                    (match, username) => `<b>@${username}</b>`
+                                )
+                            }} />
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{
+                                borderBottom: '3px solid #000',
+                                borderRight: '1px solid #000',
+                                borderTopRightRadius: '0px',
+                                borderTopLeftRadius: '30px',
+                                borderBottomRightRadius: '11px',
+                                borderBottomLeftRadius: '2px',
+                                position: 'absolute',
+                                bottom: '-0.4px',
+                                left: '30.5px',
+                                width: '30px',
+                                height: '31px',
+                                background: mention.colors[1], // Use the second color from the colors array
+                                clipPath: 'polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%, 0% 75%)',
+                                zIndex: '0',
+                                transform: 'rotate(-83.6deg)',
+                                transformOrigin: 'bottom left',
+                            }}
                             />
                         </div>
                     ))}
                 </>
+            )}
+
+
+            {/* Bottom Navigation */}
+            {isCommentDropdownOpen ? (
+
+                <div style={{zIndex:'100', position: 'fixed', bottom: '10px', left: '0px', right: '0px',}}>
+                    <div style={{background:'#fff', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)',borderRadius:'11px', height:'155px',zIndex:'100' ,width:'100%',position:'relative',top:'70px' }}>
+
+                        {/* You can add your textbox and other components here */}
+                        {/* For example, an input field for entering comments */}
+                        <textarea type="text" placeholder="Enter your comment"
+                                  style={{ resize: 'none',whiteSpace: 'pre-wrap', overflowWrap: 'break-word',  paddingBottom:'0px',paddingLeft:'18.5px', fontFamily: 'Helvetica', width:'calc(100% - 21px)', height: '40px',background:'transparent',border:'0px solid #ccc',fontSize:'20px',borderRadius: '0px', position:'relative', top:'10px'}}
+                        />
+                        <button  style={{ float: 'right',right:'10px',position: 'relative', bottom: '-12px', backgroundColor: '#000', color: '#fff', border: 'none', borderRadius: '11px', padding: '6px 12px', fontSize: '15px', cursor: 'pointer', fontFamily:'Helvetica' }}><b>Comment</b></button>
+                    </div>
+                </div>
+
+            ) : (
+                // Render your bottom navigation when the dropdown is closed
+                <div style={{ position: 'fixed', bottom: '0', left: '0', right: '0', backgroundColor: '#333' }}>
+                </div>
             )}
 
 
@@ -237,8 +810,8 @@ const ProfilePage = ({user ,activeTab='mentioned', handleTabClick,setUserData,us
                                 <img src={friend.image} style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} />
                                 <div style={{ flex: '1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
-                                        <p style={{ fontFamily: 'Helvetica', color: '#000', fontSize: '17px', position: 'relative', top: '4px', margin: '10px' }}><b>@{friend.username}</b></p>
-                                        <p style={{ fontFamily: 'Helvetica', color: '#8f8f8f', position: 'relative', top: '-2px', fontSize: '17px', margin: '10px' }}>{friend.name}</p>
+                                        <p style={{ fontFamily: 'Helvetica', color: '#000', fontSize: '17px', position: 'relative', top: '4px', margin: '10px' }}><b>{friend.name}</b></p>
+                                        <p style={{ fontFamily: 'Helvetica', color: '#8f8f8f', position: 'relative', top: '-2px', fontSize: '17px', margin: '10px' }}>@{friend.username}</p>
                                     </div>
                                     <button style={{ fontFamily: 'Helvetica', backgroundColor: 'white', padding: '6px 10px', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px' }} onClick={() => handleUnfriend(friend.name)}><b>Unfriend</b></button>
                                 </div>
