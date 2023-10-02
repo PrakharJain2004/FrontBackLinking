@@ -240,6 +240,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             setUserData({
                 id: userProfileData.id,
                 bio: userProfileData.bio,
+                branch: userProfileData.branch,
                 profile_picture: userProfileData.profile_picture,
                 user: userProfileData.user,
                 fullName, // Use the corrected fullName
@@ -451,7 +452,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             <div style={{ position: 'relative' }}>
                 <img src={userData ? userData.profile_picture : 'Loading...'} style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',width: '70px', height: '70px', borderRadius: '50%', position:'absolute', top: '-60px', right: '14px'}}/>
                 <br/>
-                <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-35px'}}>{user.branch}</p>
+                <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-35px'}}>{userData ? userData.branch : 'Loading...'}</p>
                 <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-10px'}}>{userData ? userData.bio : 'Loading...'}</p>
             </div>
 

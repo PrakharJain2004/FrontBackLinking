@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import axios from 'axios';
 
 import homeIcon from './homeicon.png';
@@ -9,6 +9,7 @@ import rvclogo from './rvclogo.png';
 import likeicon from './likeicon.png';
 import dislikeicon from './dislikeicon.png';
 import commenticon from './commenticon.png';
+import postmenuIcon from "./postmenuicon.png";
 
 const Dashboard = ({ user }) => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -21,6 +22,57 @@ const Dashboard = ({ user }) => {
     const [commentCounts, setCommentCounts] = useState({});
     const authToken = localStorage.getItem('token');
     const [newComment, setNewComment] = useState('');
+    const [showpostDropdown, setShowpostDropdown] = useState(false);
+    const dropdownRef = useRef(null);
+    const loggedInUsername = localStorage.getItem('username'); // Get the currently logged-in user's username
+    const [mentionedPosts, setMentionedPosts] = useState([]);
+    const [userPosts, setUserPosts] = useState([]);
+
+    // Fetch the posts where the user is mentioned
+    useEffect(() => {
+        axios
+            .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/api/mentioned-posts/${loggedInUsername}/`, {
+                headers: {
+                    Authorization: `Token ${authToken}`,
+                },
+            })
+            .then((response) => {
+                const mentionedPosts = response.data;
+
+                // Update the state to include mentioned posts
+                setMentionedPosts(mentionedPosts);
+            })
+            .catch((error) => {
+                console.error('Error fetching mentioned posts:', error);
+            });
+    }, [authToken, loggedInUsername]);
+
+    // Fetch the posts authored by the user
+    useEffect(() => {
+        axios
+            .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/api/posts-by-author/${loggedInUsername}/`, {
+                headers: {
+                    Authorization: `Token ${authToken}`,
+                },
+            })
+            .then((response) => {
+                const userPosts = response.data;
+
+                // Update the state to include user's posts
+                setUserPosts(userPosts);
+            })
+            .catch((error) => {
+                console.error('Error fetching user posts:', error);
+            });
+    }, [authToken, loggedInUsername]);
+
+    const shouldShowPostMenuIcon = (postId) => {
+        // Check if the post is authored by the user or mentioned in mentionedPosts
+        const isUserPost = userPosts.some((post) => post.id === postId);
+        const isMentionedPost = mentionedPosts.some((post) => post.id === postId);
+
+        return isUserPost || isMentionedPost;
+    };
 
     const handleCommentInputChange = (event) => {
         setNewComment(event.target.value);
@@ -70,6 +122,25 @@ const Dashboard = ({ user }) => {
                 console.error('Error posting comment:', error);
             });
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showpostDropdown && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowpostDropdown(false);
+
+            }
+        };
+
+        if (showpostDropdown) {
+            document.addEventListener('click', handleClickOutside);
+        } else {
+            document.removeEventListener('click', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [showpostDropdown]);
 
     const fetchUserDetails = (userId) => {
         return axios.get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
@@ -180,6 +251,23 @@ const Dashboard = ({ user }) => {
             });
     }, [authToken]);
 
+    const handlepostmenuClick = () => {
+        // Toggle the dropdown menu
+        setShowpostDropdown(!showpostDropdown);
+    };
+
+    const handleDeleteConfession = (confessionId) => {
+        // Implement your logic to delete the confession here.
+        // You may need to make an API request to delete the confession from the server.
+        // Once the confession is deleted, update the state to remove it from the user's confessions list.
+        const updatedConfessions = user.confessions.filter((confession) => confession.id !== confessionId);
+        setShowpostDropdown(false);
+        // setUserData({
+        //     ...user,
+        //     confessions: updatedConfessions,
+        // });
+    };
+
     const handleLikeDislike = (confessionId) => {
         const newLikeState = { ...likeState };
         newLikeState[confessionId] = !newLikeState[confessionId];
@@ -280,6 +368,20 @@ const Dashboard = ({ user }) => {
                             color: '#000',
                             fontFamily: 'Helvetica'
                         }}>{formatTimeDifference(confession.date_posted)}</p>
+
+                        {shouldShowPostMenuIcon(confession.id) && (
+                            <button onClick={handlepostmenuClick} style={{ backgroundColor: 'transparent', border: 'none' }}>
+                                <img src={ postmenuIcon}  style={{ position: 'relative', cursor: 'pointer',width: '25px', height: '25px' ,marginRight:'10px'}}  /></button>
+                        )}
+                        {showpostDropdown && (
+                            <div  ref={dropdownRef}
+                                  style={{overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'50%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
+                                <ul style={{ listStyle: 'none', padding: '0' }}>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'#ff4b4b' }}  onClick={() => handleDeleteConfession(confession.id)}><b>Delete</b></li>
+                                </ul>
+                            </div>
+                        )}
+
                         <button
                             onClick={() => handleLikeDislike(confession.id)}
                             style={{ backgroundColor: 'transparent', border: 'none' }}
