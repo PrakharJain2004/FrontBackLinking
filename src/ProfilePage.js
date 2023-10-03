@@ -33,6 +33,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const dropdownRef = useRef(null);
     const [posts, setPosts] = useState([]);
     const [selectedConfessionIdForMenu, setSelectedConfessionIdForMenu] = useState(null);
+    const [username, setUsername] = useState('');
 
 
 
@@ -141,6 +142,24 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             })
             .catch((error) => {
                 console.error('Error posting comment:', error);
+            });
+    };
+
+    const fetchUserId = () => {
+        const username = localStorage.getItem('username');
+        const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/by-username/${username}/`;
+
+        axios
+            .get(apiUrl)
+            .then((response) => {
+                // Extract the user ID from the response
+                const userId = response.data.id;
+
+                // Call the fetchFriends function with the obtained user ID
+                fetchFriends(userId);
+            })
+            .catch((error) => {
+                console.error('Error fetching user ID:', error);
             });
     };
 
@@ -429,31 +448,27 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
         const colors = ['#ff76b3', '#76cfff', '#FF7676FF', '#ffef76', '#9b76ff', '#76fd76',];
         return colors[index % colors.length];
     };
-    const handleUnfriend = (friendName) => {
-        // Create a copy of the user data
-        const updatedUserData = { ...user };
+    const handleUnfriend = (friendshipId, friendName) => {
+        // Send a PUT request to update the friendship status
+        const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/friendships/${friendshipId}/`;
 
-        // Find the index of the friend to unfriend in the user's friends array
-        const friendIndex = updatedUserData.friends.findIndex((friend) => friend.name === friendName);
-
-        // Find the index of the friend to unfriend in the filteredFriends array
-        const filteredFriendIndex = filteredFriends.findIndex((friend) => friend.name === friendName);
-
-        // Remove the friend from the user's friends array if found
-        if (friendIndex !== -1) {
-            updatedUserData.friends.splice(friendIndex, 1);
-        }
-
-        // Remove the friend from the filteredFriends array if found
-        if (filteredFriendIndex !== -1) {
-            const updatedFilteredFriends = [...filteredFriends];
-            updatedFilteredFriends.splice(filteredFriendIndex, 1);
-            setFilteredFriends(updatedFilteredFriends);
-        }
-
-        // Update the user data with the modified friends list
-        setUserData(updatedUserData);
+        axios
+            .put(apiUrl, { status: "unfriended" })
+            .then((response) => {
+                // Check if the PUT request was successful
+                if (response.status === 200) {
+                    // Remove the friend from the filteredFriends array
+                    const updatedFilteredFriends = filteredFriends.filter((friend) => friend.fullName !== friendName);
+                    setFilteredFriends(updatedFilteredFriends);
+                } else {
+                    console.error('Error unfriending friend:', response.statusText);
+                }
+            })
+            .catch((error) => {
+                console.error('Error unfriending friend:', error);
+            });
     };
+
     const handleInputChange = (e) => {
         const query = e.target.value;
         setSearchQuery(query);
@@ -488,6 +503,61 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
         setLikeState(newLikeState);
     };
 
+    // Function to fetch friends data
+    const fetchFriends = (userId) => {
+        // Construct the URL with the user's ID
+        const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/user-friends/${userId}/`;
+
+        axios
+            .get(apiUrl)
+            .then((response) => {
+                // Check if response.data is defined and is an array
+                if (Array.isArray(response.data)) {
+                    // Extract the list of friends from the response with a status of "accepted"
+                    const friendsList = response.data
+                        .filter((friendship) => friendship.status === "accepted")
+                        .map((friendship) => {
+                            // Check if friendship object contains 'user' and 'friend' properties
+                            if (friendship.user && friendship.friend) {
+                                const friendUser = friendship.friend.id === userId ? friendship.user : friendship.friend;
+                                // Check if friendUser object contains 'id', 'username', 'first_name', and 'last_name' properties
+                                if (friendUser.id && friendUser.username && friendUser.first_name && friendUser.last_name) {
+                                    const fullName = friendUser.first_name + ' ' + friendUser.last_name;
+                                    return {
+                                        id: friendUser.id,
+                                        username: friendUser.username,
+                                        fullName,
+                                        friendshipId: friendship.friendship_id, // Store the friendship_id
+                                    };
+                                } else {
+                                    console.error('Error fetching friends: Invalid friendUser data', friendUser);
+                                }
+                            } else {
+                                console.error('Error fetching friends: Invalid friendship data', friendship);
+                            }
+                        });
+
+                    // Remove undefined items from the friendsList array
+                    const filteredFriendsList = friendsList.filter((friend) => friend);
+
+                    // Update the state with the list of friends
+                    setFilteredFriends(filteredFriendsList);
+                } else {
+                    // Handle the case where response.data is not an array
+                    console.error('Error fetching friends: Response data is not an array', response.data);
+                }
+            })
+            .catch((error) => {
+                console.error('Error fetching friends:', error);
+            });
+    };
+
+
+
+    // Fetch friends data when the component is mounted
+    useEffect(() => {
+        fetchUserId();
+    }, [username]);
 
 
     const handleEditProfileClick = () => {
@@ -1118,10 +1188,10 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                 <img src={friend.image} style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} />
                                 <div style={{ flex: '1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
-                                        <p style={{ fontFamily: 'Helvetica', color: '#000', fontSize: '17px', position: 'relative', top: '4px', margin: '10px' }}><b>{friend.name}</b></p>
+                                        <p style={{ fontFamily: 'Helvetica', color: '#000', fontSize: '17px', position: 'relative', top: '4px', margin: '10px' }}><b>{friend.fullName}</b></p>
                                         <p style={{ fontFamily: 'Helvetica', color: '#8f8f8f', position: 'relative', top: '-2px', fontSize: '17px', margin: '10px' }}>@{friend.username}</p>
                                     </div>
-                                    <button style={{ fontFamily: 'Helvetica', backgroundColor: 'white', padding: '6px 10px', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px' }} onClick={() => handleUnfriend(friend.name)}><b>Unfriend</b></button>
+                                    <button style={{ fontFamily: 'Helvetica', backgroundColor: 'white', padding: '6px 10px', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px' }} onClick={() => handleUnfriend(friend.friendshipId)}><b>Unfriend</b></button>
                                 </div>
                             </div>
                         ))}
