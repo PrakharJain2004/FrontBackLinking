@@ -1,9 +1,10 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import menuIcon from './menuicon.png';
 import likeicon from "./likeicon.png";
 import dislikeicon from "./dislikeicon.png";
 import commenticon from "./commenticon.png";
 import CrossIcon from './cross.png';
+import postmenuIcon from "./postmenuicon.png";
 import axios from 'axios';
 
 
@@ -28,6 +29,11 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const [userData, setUserData] = useState(null);
     const [newName, setNewName] = useState(user.name);
     const [newBio, setNewBio] = useState(user.bio);
+    const [showpostDropdown, setShowpostDropdown] = useState(false);
+    const dropdownRef = useRef(null);
+    const [posts, setPosts] = useState([]);
+    const [selectedConfessionIdForMenu, setSelectedConfessionIdForMenu] = useState(null);
+
 
 
     const fetchConfessions = async () => {
@@ -136,6 +142,12 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             .catch((error) => {
                 console.error('Error posting comment:', error);
             });
+    };
+
+    const handlepostmenuClick = (confessionId) => {
+        // Toggle the dropdown menu
+        setSelectedConfessionIdForMenu(confessionId);
+        setShowpostDropdown(!showpostDropdown);
     };
 
     const toggleCommentDropdown = (confession) => {
@@ -251,6 +263,31 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
         }
     };
 
+    const handleDeleteConfession = () => {
+        if (selectedConfessionIdForMenu) {
+            // Send a DELETE request to the endpoint for deleting the post
+            axios
+                .delete(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/${selectedConfessionIdForMenu}/`, {
+                    headers: {
+                        Authorization: `Token ${token}`,
+                    },
+                })
+                .then((response) => {
+                    // Handle successful post deletion (e.g., remove it from the state)
+                    // You can update the state here to remove the deleted post
+                    const updatedConfessions = confessions.filter((confession) => confession.id !== selectedConfessionIdForMenu);
+                    setConfessions(updatedConfessions);
+
+                    // Optionally, close the dropdown or perform any other necessary actions
+                    setShowpostDropdown(false);
+                })
+                .catch((error) => {
+                    console.error('Error deleting post:', error);
+                });
+        }
+    };
+
+
 
     // Fetch user profile data when the component mounts
     useEffect(() => {
@@ -281,10 +318,41 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             // Once you have the response, you can set it to your component's state
             const mentionsWithColors = response.data.map((mention, index) => ({
                 ...mention,
-                colors: getColorSet(mention.color_code), // Get the color set based on color_code
+                colors: getColorSet(mention.color_code),
+                post_id: mention.id// Get the color set based on color_code
             }));
 
             setMentions(mentionsWithColors);
+
+            const commentCountPromises = mentionsWithColors.map((post) => {
+                return axios
+                    .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
+                        headers: {
+                            Authorization: `Token ${token}`,
+                        },
+                    })
+                    .then((response) => {
+                        const count = response.data.length;
+                        return { postId: post.id, count };
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching comment count:', error);
+                        return { postId: post.id, count: 0 };
+                    });
+            });
+
+            Promise.all(commentCountPromises)
+                .then((counts) => {
+                    // Create an object with post IDs as keys and comment counts as values
+                    const commentCountsObject = {};
+                    counts.forEach((countObj) => {
+                        commentCountsObject[countObj.postId] = countObj.count;
+                    });
+                    setCommentCounts(commentCountsObject);
+                })
+                .catch((error) => {
+                    console.error('Error fetching comment counts:', error);
+                });
         } catch (error) {
             console.error('Error fetching mentions:', error);
         }
@@ -641,6 +709,23 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                         color: '#000',
                                         fontFamily: 'Helvetica'
                                     }}>{formatTimeDifference(confession.date_posted)}</p>
+
+                                    <button
+                                        onClick={() => handlepostmenuClick(confession.id)}
+                                        style={{ backgroundColor: 'transparent', border: 'none' }}
+                                    >
+                                        <img src={postmenuIcon} style={{ position: 'relative', cursor: 'pointer', width: '25px', height: '25px', marginRight: '10px' }} />
+                                    </button>
+
+                                    {showpostDropdown && (
+                                        <div  ref={dropdownRef}
+                                              style={{overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'50%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
+                                            <ul style={{ listStyle: 'none', padding: '0' }}>
+                                                <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'#ff4b4b' }}  onClick={() => handleDeleteConfession(confession.id)}><b>Delete</b></li>
+                                            </ul>
+                                        </div>
+                                    )}
+
                                     <button
                                         onClick={() => handleLikeDislike(confession.id)}
                                         style={{ backgroundColor: 'transparent', border: 'none' }}
@@ -832,6 +917,23 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                     color: '#000',
                                     fontFamily: 'Helvetica'
                                 }}>{formatTimeDifference(mention.date_posted)}</p>
+
+                                <button
+                                    onClick={() => handlepostmenuClick(mention.id)}
+                                    style={{ backgroundColor: 'transparent', border: 'none' }}
+                                >
+                                    <img src={postmenuIcon} style={{ position: 'relative', cursor: 'pointer', width: '25px', height: '25px', marginRight: '10px' }} />
+                                </button>
+
+                                {showpostDropdown && (
+                                    <div  ref={dropdownRef}
+                                          style={{overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'50%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
+                                        <ul style={{ listStyle: 'none', padding: '0' }}>
+                                            <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'#ff4b4b' }}  onClick={() => handleDeleteConfession(mention.id)}><b>Delete</b></li>
+                                        </ul>
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={() => handleLikeDislike(mention.id)}
                                     style={{ backgroundColor: 'transparent', border: 'none', }}

@@ -257,16 +257,25 @@ const Dashboard = ({ user }) => {
     };
 
     const handleDeleteConfession = (confessionId) => {
-        // Implement your logic to delete the confession here.
-        // You may need to make an API request to delete the confession from the server.
-        // Once the confession is deleted, update the state to remove it from the user's confessions list.
-        const updatedConfessions = user.confessions.filter((confession) => confession.id !== confessionId);
-        setShowpostDropdown(false);
-        // setUserData({
-        //     ...user,
-        //     confessions: updatedConfessions,
-        // });
+        // Send a DELETE request to the endpoint for deleting the post
+        axios
+            .delete(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/${confessionId}/`, {
+                headers: {
+                    Authorization: `Token ${authToken}`,
+                },
+            })
+            .then((response) => {
+                // Handle successful post deletion (e.g., remove it from the state)
+                // You can update the state here to remove the deleted post
+                const updatedPosts = posts.filter((post) => post.id !== confessionId);
+                setPosts(updatedPosts);
+                window.location.reload();
+            })
+            .catch((error) => {
+                console.error('Error deleting post:', error);
+            });
     };
+
 
     const handleLikeDislike = (confessionId) => {
         const newLikeState = { ...likeState };
