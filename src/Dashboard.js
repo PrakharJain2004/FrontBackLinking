@@ -90,7 +90,7 @@ const Dashboard = ({ user }) => {
 
         // Make a POST request to the API endpoint with token authentication
         axios
-            .post('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/', commentData, {
+            .post('https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/', commentData, {
                 headers: {
                     Authorization: `Token ${authToken}`,
                 },
@@ -143,7 +143,7 @@ const Dashboard = ({ user }) => {
     }, [showpostDropdown]);
 
     const fetchUserDetails = (userId) => {
-        return axios.get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
+        return axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
             headers: {
                 Authorization: `Token ${authToken}`,
             },
@@ -198,7 +198,7 @@ const Dashboard = ({ user }) => {
         const authToken = localStorage.getItem('token');
 
         axios
-            .get('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/', {
+            .get('https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/', {
                 headers: {
                     Authorization: `Token ${authToken}`,
                 },
@@ -217,7 +217,7 @@ const Dashboard = ({ user }) => {
                 // Fetch comment counts for each post
                 const commentCountPromises = postsWithColors.map((post) => {
                     return axios
-                        .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
+                        .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
                             headers: {
                                 Authorization: `Token ${authToken}`,
                             },
@@ -292,7 +292,7 @@ const Dashboard = ({ user }) => {
         } else {
             // Open the comment section
             axios
-                .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${confession.id}/`, {
+                .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${confession.id}/`, {
                     headers: {
                         Authorization: `Token ${authToken}`, // Include any required authentication headers
                     },

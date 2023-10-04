@@ -14,7 +14,7 @@ const SearchPage = () => {
             const cleanedQuery = searchQuery.trim().toLowerCase().replace(/\s/g, '');
 
             // Make a GET request to your API endpoint
-            axios.get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/`)
+            axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/`)
                 .then((response) => {
                     // Filter the results based on the cleaned search query
                     const filteredUsers = response.data.filter((user) =>

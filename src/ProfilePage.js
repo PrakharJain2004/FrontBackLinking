@@ -68,7 +68,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
             const commentCountPromises = confessionsData.map((post) => {
                 return axios
-                    .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
+                    .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
                         headers: {
                             Authorization: `Token ${token}`,
                         },
@@ -112,7 +112,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
         // Make a POST request to the API endpoint with token authentication
         axios
-            .post('http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/', commentData, {
+            .post('https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/', commentData, {
                 headers: {
                     Authorization: `Token ${token}`,
                 },
@@ -178,7 +178,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
         } else {
             // Open the comment section
             axios
-                .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${confession.id}/`, {
+                .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${confession.id}/`, {
                     headers: {
                         Authorization: `Token ${token}`, // Include any required authentication headers
                     },
@@ -212,7 +212,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     };
 
     const fetchUserDetails = (userId) => {
-        return axios.get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
+        return axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${userId}/`, {
             headers: {
                 Authorization: `Token ${token}`,
             },
@@ -345,7 +345,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
             const commentCountPromises = mentionsWithColors.map((post) => {
                 return axios
-                    .get(`http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
+                    .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/comments_on_post/${post.id}/`, {
                         headers: {
                             Authorization: `Token ${token}`,
                         },

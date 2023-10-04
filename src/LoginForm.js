@@ -54,7 +54,7 @@ function LoginForm({ setIsAuthenticated }) {
         try {
             // Send a POST request to the authentication endpoint
             const response = await axios.post(
-                'http://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/api-token-auth/',
+                'https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/api-token-auth/',
                 {
                     username: formData.username,
                     password: formData.password,
