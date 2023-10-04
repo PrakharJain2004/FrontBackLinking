@@ -35,6 +35,9 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const [selectedConfessionIdForMenu, setSelectedConfessionIdForMenu] = useState(null);
     const [username, setUsername] = useState('');
     const [friends, setFriends] = useState([]);
+    const [confessionsCommentCounts, setConfessionsCommentCounts] = useState({});
+    const [mentionsCommentCounts, setMentionsCommentCounts] = useState({});
+
 
 
 
@@ -86,16 +89,16 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
             Promise.all(commentCountPromises)
                 .then((counts) => {
-                    // Create an object with post IDs as keys and comment counts as values
                     const commentCountsObject = {};
                     counts.forEach((countObj) => {
                         commentCountsObject[countObj.postId] = countObj.count;
                     });
-                    setCommentCounts(commentCountsObject);
+                    setConfessionsCommentCounts(commentCountsObject); // Update the confessions comment counts
                 })
                 .catch((error) => {
                     console.error('Error fetching comment counts:', error);
                 });
+
         } catch (error) {
             console.error('Error fetching confessions:', error);
         }
@@ -363,12 +366,11 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
             Promise.all(commentCountPromises)
                 .then((counts) => {
-                    // Create an object with post IDs as keys and comment counts as values
                     const commentCountsObject = {};
                     counts.forEach((countObj) => {
                         commentCountsObject[countObj.postId] = countObj.count;
                     });
-                    setCommentCounts(commentCountsObject);
+                    setMentionsCommentCounts(commentCountsObject); // Update the mentions comment counts
                 })
                 .catch((error) => {
                     console.error('Error fetching comment counts:', error);
@@ -821,7 +823,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                         }}>
                                         <img src={commenticon} style={{ height: '25px', width: '25px' }} />
                                         <span style={{ marginLeft: '4px', fontFamily: 'Helvetica', position: 'relative', top: '-7px' }}>
-                {formatCommentCount(commentCounts[confession.id] || 0)}
+                {formatCommentCount(confessionsCommentCounts[confession.id] || 0)}
               </span>
                                     </button>
                                     {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
@@ -1029,7 +1031,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                     }}>
                                     <img src={commenticon} style={{ height: '25px', width: '25px' }} />
                                     <span style={{ marginLeft: '4px', fontFamily: 'Helvetica', position: 'relative', top: '-7px' }}>
-                            {formatCommentCount(commentCounts[mention.id] || 0)}
+                            {formatCommentCount(mentionsCommentCounts[mention.id] || 0)}
                         </span>
                                 </button>
                                 {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (

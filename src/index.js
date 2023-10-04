@@ -37,7 +37,7 @@ const App = () => {
         ],
         name: 'Friend2',
         id:'2',
-        username:'tester_2',
+        username:'You Just Commented',
         profileImage: '.profileicon',
         branch: 'CSE26',
         bio: 'A passionate blogger and explorer!',
@@ -52,7 +52,7 @@ const App = () => {
                 "comment": "Lorem Ipsum Dolor",
                 "user_commented": {
                     "id": 2,
-                    "username": "tester_2",
+                    "username": "you",
                     "email": "",
                     "first_name": "",
                     "last_name": "",

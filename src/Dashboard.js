@@ -105,10 +105,12 @@ const Dashboard = ({ user }) => {
                 };
 
                 // Update the comments state with the newly added comment immediately
-                setComments([...comments, newCommentData]);
+                setSelectedConfessionComments((prevComments) => [...prevComments, newCommentData]);
 
                 // Clear the comment input field
                 setNewComment('');
+
+                // No need to fetch comments here; they will already be in selectedConfessionComments
             })
             .catch((error) => {
                 console.error('Error posting comment:', error);
@@ -306,6 +308,9 @@ const Dashboard = ({ user }) => {
                             setSelectedConfessionComments(commentsWithUsers);
                             setSelectedConfessionId(confession.id);
                             setCommentDropdownOpen(true);
+
+                            // Fetch comments for the selected post immediately when opening the comment section
+                            fetchComments(confession.id); // This line is already in the correct place
                         })
                         .catch((error) => {
                             console.error('Error fetching comments:', error);
@@ -469,14 +474,14 @@ const Dashboard = ({ user }) => {
                                                 fontSize: '17px',
                                                 position: 'relative',
                                                 top: '4px',
-                                            }}><b>{comment.user_commented.first_name + comment.user_commented.last_name}</b></p>
+                                            }}> <b>{comment.user_commented.first_name} {comment.user_commented.last_name}</b> </p>
                                             <p style={{
                                                 fontFamily: 'Helvetica',
                                                 color: '#8f8f8f',
                                                 position: 'relative',
                                                 top: '-10px',
                                                 fontSize: '17px',
-                                            }}>@{comment.user_commented.username}</p>
+                                            }}><b>{comment.user_commented.username || ''}</b></p>
                                             <p style={{
                                                 fontFamily: 'Helvetica',
                                                 position: 'relative',
