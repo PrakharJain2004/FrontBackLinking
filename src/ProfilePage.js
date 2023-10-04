@@ -12,7 +12,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [showStickyNote, setShowStickyNote] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filteredFriends, setFilteredFriends] = useState(user.friends);
+    const [filteredFriends, setFilteredFriends] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [likeState, setLikeState] = useState({});
     const [isCommentDropdownOpen, setCommentDropdownOpen] = useState(false);
@@ -34,6 +34,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const [posts, setPosts] = useState([]);
     const [selectedConfessionIdForMenu, setSelectedConfessionIdForMenu] = useState(null);
     const [username, setUsername] = useState('');
+    const [friends, setFriends] = useState([]);
 
 
 
@@ -453,7 +454,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
         const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/friendships/${friendshipId}/`;
 
         axios
-            .put(apiUrl, { status: "unfriended" })
+            .put(apiUrl, { status: 'unfriended' })
             .then((response) => {
                 // Check if the PUT request was successful
                 if (response.status === 200) {
@@ -476,8 +477,10 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     };
 
     const filterFriends = (query) => {
-        const filtered = user.friends.filter((friend) =>
-            friend.name.toLowerCase().includes(query.toLowerCase())
+        const filtered = friends.filter(
+            (friend) =>
+                friend.fullName.toLowerCase().includes(query.toLowerCase()) ||
+                friend.username.toLowerCase().includes(query.toLowerCase())
         );
         setFilteredFriends(filtered);
     };
@@ -515,13 +518,19 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                 if (Array.isArray(response.data)) {
                     // Extract the list of friends from the response with a status of "accepted"
                     const friendsList = response.data
-                        .filter((friendship) => friendship.status === "accepted")
+                        .filter((friendship) => friendship.status === 'accepted')
                         .map((friendship) => {
                             // Check if friendship object contains 'user' and 'friend' properties
                             if (friendship.user && friendship.friend) {
-                                const friendUser = friendship.friend.id === userId ? friendship.user : friendship.friend;
+                                const friendUser =
+                                    friendship.friend.id === userId ? friendship.user : friendship.friend;
                                 // Check if friendUser object contains 'id', 'username', 'first_name', and 'last_name' properties
-                                if (friendUser.id && friendUser.username && friendUser.first_name && friendUser.last_name) {
+                                if (
+                                    friendUser.id &&
+                                    friendUser.username &&
+                                    friendUser.first_name &&
+                                    friendUser.last_name
+                                ) {
                                     const fullName = friendUser.first_name + ' ' + friendUser.last_name;
                                     return {
                                         id: friendUser.id,
@@ -541,6 +550,8 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                     const filteredFriendsList = friendsList.filter((friend) => friend);
 
                     // Update the state with the list of friends
+                    setFriends(filteredFriendsList);
+                    // Also, initially set filteredFriends to the entire list
                     setFilteredFriends(filteredFriendsList);
                 } else {
                     // Handle the case where response.data is not an array

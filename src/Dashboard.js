@@ -27,6 +27,8 @@ const Dashboard = ({ user }) => {
     const loggedInUsername = localStorage.getItem('username'); // Get the currently logged-in user's username
     const [mentionedPosts, setMentionedPosts] = useState([]);
     const [userPosts, setUserPosts] = useState([]);
+    const [comments, setComments] = useState([]);
+    const [selectedPostComments, setSelectedPostComments] = useState([]);
 
     // Fetch the posts where the user is mentioned
     useEffect(() => {
@@ -74,8 +76,8 @@ const Dashboard = ({ user }) => {
         return isUserPost || isMentionedPost;
     };
 
-    const handleCommentInputChange = (event) => {
-        setNewComment(event.target.value);
+    const handleCommentInputChange = (e) => {
+        setNewComment(e.target.value);
     };
 
     const handleCommentSubmit = () => {
@@ -88,7 +90,7 @@ const Dashboard = ({ user }) => {
             post_id: selectedConfessionId, // Use the selected post's ID
         };
 
-        // Make a POST request to the API endpoint with token authentication
+        // Make a POST request to add a new comment with token authentication
         axios
             .post('https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/', commentData, {
                 headers: {
@@ -97,26 +99,16 @@ const Dashboard = ({ user }) => {
             })
             .then((response) => {
                 // Handle successful comment submission
-                // console.log('Comment posted successfully:', response.data);
-
-                // Step 1: Add the new comment to the selectedConfessionComments state
                 const newCommentData = {
                     ...response.data,
                     user_commented: user, // Add user details to the comment
                 };
-                setSelectedConfessionComments([...selectedConfessionComments, newCommentData]);
 
-                // Step 2: Update the comment count for the selected post
-                setCommentCounts((prevCounts) => ({
-                    ...prevCounts,
-                    [selectedConfessionId]: (prevCounts[selectedConfessionId] || 0) + 1,
-                }));
+                // Update the comments state with the newly added comment immediately
+                setComments([...comments, newCommentData]);
 
                 // Clear the comment input field
                 setNewComment('');
-
-                // Refresh the page to show the updated comments
-                window.location.reload();
             })
             .catch((error) => {
                 console.error('Error posting comment:', error);
@@ -323,6 +315,26 @@ const Dashboard = ({ user }) => {
                     console.error('Error fetching comments:', error);
                 });
         }
+    };
+
+    useEffect(() => {
+        // Fetch comments for the selected post when the component mounts
+        if (selectedConfessionId !== null) {
+            fetchComments(selectedConfessionId);
+        }
+    }, [selectedConfessionId]);
+
+    const fetchComments = (postId) => {
+        // Make a GET request to fetch comments for the selected post
+        axios
+            .get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/comments/?post_id=${postId}`)
+            .then((response) => {
+                // Set the comments in the state
+                setComments(response.data);
+            })
+            .catch((error) => {
+                console.error('Error fetching comments:', error);
+            });
     };
 
 
