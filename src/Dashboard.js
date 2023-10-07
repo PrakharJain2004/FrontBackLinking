@@ -29,6 +29,7 @@ const Dashboard = ({ user }) => {
     const [userPosts, setUserPosts] = useState([]);
     const [comments, setComments] = useState([]);
     const [selectedPostComments, setSelectedPostComments] = useState([]);
+    const [selectedPostForDeletion, setSelectedPostForDeletion] = useState(null);
 
     // Fetch the posts where the user is mentioned
     useEffect(() => {
@@ -245,30 +246,35 @@ const Dashboard = ({ user }) => {
             });
     }, [authToken]);
 
-    const handlepostmenuClick = () => {
+    const handlepostmenuClick = (postId) => { // Modify the function to accept postId
         // Toggle the dropdown menu
         setShowpostDropdown(!showpostDropdown);
+        setSelectedPostForDeletion(postId); // Set the selected post for deletion
     };
 
-    const handleDeleteConfession = (confessionId) => {
-        // Send a DELETE request to the endpoint for deleting the post
-        axios
-            .delete(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/${confessionId}/`, {
-                headers: {
-                    Authorization: `Token ${authToken}`,
-                },
-            })
-            .then((response) => {
-                // Handle successful post deletion (e.g., remove it from the state)
-                // You can update the state here to remove the deleted post
-                const updatedPosts = posts.filter((post) => post.id !== confessionId);
-                setPosts(updatedPosts);
-                window.location.reload();
-            })
-            .catch((error) => {
-                console.error('Error deleting post:', error);
-            });
+    const handleDeleteConfession = () => {
+        if (selectedPostForDeletion) {
+            // Send a DELETE request to the endpoint for deleting the post
+            axios
+                .delete(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/posts/${selectedPostForDeletion}/`, {
+                    headers: {
+                        Authorization: `Token ${authToken}`,
+                    },
+                })
+                .then((response) => {
+                    // Handle successful post deletion (e.g., remove it from the state)
+                    // You can update the state here to remove the deleted post
+                    const updatedPosts = posts.filter((post) => post.id !== selectedPostForDeletion);
+                    setPosts(updatedPosts);
+                    setSelectedPostForDeletion(null); // Clear the selected post for deletion
+                    setShowpostDropdown(false); // Close the dropdown menu
+                })
+                .catch((error) => {
+                    console.error('Error deleting post:', error);
+                });
+        }
     };
+
 
 
     const handleLikeDislike = (confessionId) => {
@@ -396,8 +402,9 @@ const Dashboard = ({ user }) => {
                         }}>{formatTimeDifference(confession.date_posted)}</p>
 
                         {shouldShowPostMenuIcon(confession.id) && (
-                            <button onClick={handlepostmenuClick} style={{ backgroundColor: 'transparent', border: 'none' }}>
-                                <img src={ postmenuIcon}  style={{ position: 'relative', cursor: 'pointer',width: '25px', height: '25px' ,marginRight:'10px'}}  /></button>
+                            <button onClick={() => handlepostmenuClick(confession.id)} style={{ backgroundColor: 'transparent', border: 'none' }}>
+                                <img src={postmenuIcon} style={{ position: 'relative', cursor: 'pointer', width: '25px', height: '25px', marginRight: '10px' }} />
+                            </button>
                         )}
                         {showpostDropdown && (
                             <div  ref={dropdownRef}

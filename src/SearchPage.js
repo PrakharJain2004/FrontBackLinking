@@ -1,10 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const SearchPage = () => {
+const SearchPage = (props) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const { user, usersData, setCurrentPage } = props;
+
+
+    const handleSearchResultClick = (userId) => {
+        // Store the user.id in local storage with an expiration time (e.g., 5 minutes)
+        localStorage.setItem('searchid', userId);
+        const expirationTime = new Date().getTime() + 5 * 60 * 1000; // 5 minutes in milliseconds
+        localStorage.setItem('searchidExpiration', expirationTime);
+
+        // Do something with the selected user, e.g., redirect to a user profile page
+        // You can add your logic here.
+    };
+
+    const switchToUserprofilePage = (selectedUser) => {
+        props.setCurrentPage('userprofilePage');
+        // You can use the selectedUser to pass the data to the user profile page.
+        console.log("Switching to user profile:", selectedUser);
+    };
 
     useEffect(() => {
         if (searchQuery.trim().length >= 2) {
@@ -78,6 +96,7 @@ const SearchPage = () => {
                             borderBottom: '1px solid #ccc',
                             padding: '0px 0',
                         }}
+                        onClick={() => switchToUserprofilePage(user)}
                     >
                         <img
                             src={user.image} // Replace with the actual image field

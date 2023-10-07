@@ -27,8 +27,9 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const token = localStorage.getItem('token');
     const [newComment, setNewComment] = useState('');
     const [userData, setUserData] = useState(null);
-    const [newName, setNewName] = useState(user.name);
-    const [newBio, setNewBio] = useState(user.bio);
+    const [newName, setNewName] = useState(userData ? userData.fullName : '');
+    const [newBio, setNewBio] = useState(userData ? userData.bio : '');
+    const [newBranch, setNewBranch] = useState(userData ? userData.branch : '');
     const [showpostDropdown, setShowpostDropdown] = useState(false);
     const dropdownRef = useRef(null);
     const [posts, setPosts] = useState([]);
@@ -37,6 +38,10 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const [friends, setFriends] = useState([]);
     const [confessionsCommentCounts, setConfessionsCommentCounts] = useState({});
     const [mentionsCommentCounts, setMentionsCommentCounts] = useState({});
+    const [initialName, setInitialName] = useState('');
+    const [initialBio, setInitialBio] = useState('');
+    const [initialBranch, setInitialBranch] = useState('');
+
 
 
 
@@ -142,7 +147,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                 setNewComment('');
 
                 // Refresh the page to show the updated comments
-                window.location.reload();
+                // window.location.reload();
             })
             .catch((error) => {
                 console.error('Error posting comment:', error);
@@ -250,7 +255,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             const token = localStorage.getItem('token');
             const username = localStorage.getItem('username');
 
-            // First, fetch user data from the first endpoint
+            // First, fetch user data from the first endpoint for profile picture and bio
             const firstEndpointResponse = await axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/profile-pics/by-username/${username}/`, {
                 headers: {
                     Authorization: `Token ${token}`,
@@ -271,16 +276,22 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             // Combine the first and last name to create the fullName
             const fullName = `${userDataFromSecondEndpoint.first_name || ''} ${userDataFromSecondEndpoint.last_name || ''}`;
 
-            // Update the state with the user profile data
+            // Update the state with the user profile data, including pre-filling name and bio
             setUserData({
                 id: userProfileData.id,
-                bio: userProfileData.bio,
-                branch: userProfileData.branch,
-                profile_picture: userProfileData.profile_picture,
-                user: userProfileData.user,
+                bio: userProfileData.bio || '', // Pre-fill with an empty string if bio is null
+                branch: userProfileData.branch || '', // You can update this as needed
+                profile_picture: userProfileData.profile_picture || '', // You can update this as needed
+                user: userProfileData.user || '', // You can update this as needed
                 fullName, // Use the corrected fullName
                 // Add other fields as needed
             });
+
+            // Pre-fill the name and bio fields
+            setNewName(fullName || ''); // Use the first_name field if available
+            setNewBio(userProfileData.bio || ''); // Pre-fill with an empty string if bio is null
+            setNewBranch(userProfileData.branch || '');
+
         } catch (error) {
             console.error('Error fetching user profile data:', error);
         }
@@ -573,9 +584,16 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     }, [username]);
 
 
+
     const handleEditProfileClick = () => {
+        // Step 2: Update the new state variables with current values
+        setInitialName(newName);
+        setInitialBio(newBio);
+        setInitialBranch(newBranch);
+
         setShowEditProfileForm(true);
     };
+
 
     const handleEditProfileCancel = () => {
         setShowEditProfileForm(false);
@@ -593,6 +611,10 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
     const handleBioChange = (e) => {
         setNewBio(e.target.value);
+    };
+
+    const handleBranchChange = (e) => {
+        setNewBranch(e.target.value);
     };
 
     return (
@@ -654,9 +676,30 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                     onChange={handleNameChange}
                                     style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
                                         marginBottom: '15px',
-                                        position:'absolute',
+                                        position:'relative',
                                         left: '50%',
-                                        top: '30%',
+                                        top: '37%',
+                                        transform: 'translate(-50%, -50%)',
+                                        paddingLeft: '18px',
+                                        fontFamily: 'Helvetica',
+                                        width: 'calc(90% - 25px)',
+                                        height: '40px',
+                                        background: 'rgba(255, 255, 255, 0.5)',
+                                        border: '1px solid #ccc',
+                                        fontSize: '18px',
+                                        zIndex: '1',
+                                        borderRadius: '11px',}}
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Branch"
+                                    value={newBranch}
+                                    onChange={handleBranchChange}
+                                    style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                        marginBottom: '15px',
+                                        position:'relative',
+                                        left: '50%',
+                                        top: '38%',
                                         transform: 'translate(-50%, -50%)',
                                         paddingLeft: '18px',
                                         fontFamily: 'Helvetica',
@@ -675,9 +718,9 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                     style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
                                         marginBottom: '15px',
                                         paddingLeft: '18px',
-                                        position:'absolute',
+                                        position:'relative',
                                         left: '50%',
-                                        top: '41%',
+                                        top: '45%',
                                         transform: 'translate(-50%, -50%)',
                                         fontFamily: 'Helvetica',
                                         width: 'calc(90% - 25px)',
@@ -690,7 +733,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                 />
                                 {/* Include the code to submit the updated profile information */}
                                 <button type="submit"
-                                        style={{  position:'absolute', left: '50%', top: '52%',
+                                        style={{  position:'relative', left: '50%', top: '45%',
                                             transform: 'translate(-50%, -50%)',boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',color:'#fff', fontFamily: 'Helvetica', width: '100px', height: '40px',background:'#000',border:'1px solid #ccc',fontSize:'18px',borderRadius: '11px',}}
                                 >Save</button>
                             </form>

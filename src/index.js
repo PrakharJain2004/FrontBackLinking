@@ -5,12 +5,14 @@ import PostPage from './PostPage';
 import ProfilePage from './ProfilePage';
 import SearchPage from './SearchPage';
 import LoginForm from "./LoginForm";
+import UserprofilePage from './UserprofilePage';
 import homeIcon from './homeicon.png';
 import postIcon from './posticon.png';
 import profileIcon from './profileicon.png';
 import searchIcon from './searchicon.png';
+import { BrowserRouter } from 'react-router-dom';
 
-const App = () => {
+const App = (user) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -122,6 +124,11 @@ const App = () => {
         setActiveTab(tab);
     };
 
+    const switchToUserprofilePage = () => {
+        setCurrentPage('userprofilePage');
+
+    };
+
     useEffect(() => {
         const handleResize = () => {
             setWindowWidth(window.innerWidth);
@@ -195,7 +202,12 @@ const App = () => {
                     {currentPage === 'dashboard' && <Dashboard user={userData} />}
                     {currentPage === 'postPage' && <PostPage switchToDashboard={switchToDashboard} users={usersData} />}
                     {currentPage === 'profilePage' && <ProfilePage user={userData} activeTab={activeTab} handleTabClick={handleTabClick} setUserData={setUserData} />}
-                    {currentPage === 'searchPage' && <SearchPage usersData={usersData} />}
+                    {currentPage === 'searchPage' && (
+                        <SearchPage usersData={usersData} setCurrentPage={switchToUserprofilePage} />
+                    )}
+                    {currentPage === 'userprofilePage' && (
+                        <UserprofilePage user={userData} activeTab={activeTab} handleTabClick={handleTabClick} setUserData={setUserData} switchToSearchPage={switchToSearchPage} />
+                    )}
                 </>
             ) : (
                 // Render the login form when the user is not authenticated
@@ -205,4 +217,9 @@ const App = () => {
     );
 };
 
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(
+    <BrowserRouter>
+        <App />
+    </BrowserRouter>,
+    document.getElementById('root')
+);
