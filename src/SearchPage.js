@@ -5,24 +5,55 @@ const SearchPage = (props) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const { user, usersData, setCurrentPage } = props;
+    const [user, setUser] = useState({});
+    const [userName, setUserName] = useState('');
 
 
-    const handleSearchResultClick = (userId) => {
-        // Store the user.id in local storage with an expiration time (e.g., 5 minutes)
-        localStorage.setItem('searchid', userId);
-        const expirationTime = new Date().getTime() + 5 * 60 * 1000; // 5 minutes in milliseconds
-        localStorage.setItem('searchidExpiration', expirationTime);
 
-        // Do something with the selected user, e.g., redirect to a user profile page
-        // You can add your logic here.
-    };
+
+    useEffect(() => {
+        // Check if searchId exists in local storage
+        const searchId = localStorage.getItem('searchId');
+        const searchIdExpiration = localStorage.getItem('searchIdExpiration');
+
+        if (searchId && searchIdExpiration) {
+            const currentTime = new Date().getTime();
+
+            if (currentTime > searchIdExpiration) {
+                // Search ID has expired, clear it from local storage
+                localStorage.removeItem('searchId');
+                localStorage.removeItem('searchIdExpiration');
+            } else {
+                // Make the API request with the searchId
+                axios.get(`https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/${searchId}/`)
+                    .then(response => {
+                        // Extract user data from the response
+                        const userData = response.data;
+
+                        // Set the user data in the state
+                        setUser(userData);
+
+                        // Set the first name and last name as the name to be displayed
+                        const fullName = `${userData.first_name} ${userData.last_name}`;
+                        setUserName(fullName);
+                    })
+                    .catch(error => {
+                        // Handle error if the request fails
+                        console.error('Error fetching user data:', error);
+                    });
+            }
+        }
+    }, []);
+
 
     const switchToUserprofilePage = (selectedUser) => {
+        // Store the selected user's ID in local storage
+        localStorage.setItem('searchId', selectedUser.id);
+
+        // Redirect to the user profile page
         props.setCurrentPage('userprofilePage');
-        // You can use the selectedUser to pass the data to the user profile page.
-        console.log("Switching to user profile:", selectedUser);
     };
+
 
     useEffect(() => {
         if (searchQuery.trim().length >= 2) {
