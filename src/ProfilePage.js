@@ -8,7 +8,7 @@ import postmenuIcon from "./postmenuicon.png";
 import axios from 'axios';
 
 
-const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) => {
+const ProfilePage = ({mentionedConfessionId, user ,activeTab='confessions',switchToAboutPage, handleTabClick,usersData}) => {
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [showStickyNote, setShowStickyNote] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +41,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     const [initialName, setInitialName] = useState('');
     const [initialBio, setInitialBio] = useState('');
     const [initialBranch, setInitialBranch] = useState('');
+    const commentDropdownRef = useRef(null);
 
 
 
@@ -508,10 +509,14 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
     };
 
     const handleLogout = () => {
-        // Implement your logout logic here
-        // For example, clear user session, redirect, etc.
-        console.log('Logout clicked');
+        // Clear user-related data from local storage
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+
+        // Reload the page
+        window.location.reload();
     };
+
 
     const handleLikeDislike = (confessionId) => {
         const newLikeState = { ...likeState };
@@ -617,6 +622,27 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
         setNewBranch(e.target.value);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isCommentDropdownOpen && commentDropdownRef.current && !commentDropdownRef.current.contains(event.target)) {
+                // Click occurred outside the comment dropdown
+                setCommentDropdownOpen(false);
+                setSelectedConfessionComments([]);
+                setSelectedConfessionId(null);
+            }
+        };
+
+        if (isCommentDropdownOpen) {
+            document.addEventListener('click', handleClickOutside);
+        } else {
+            document.removeEventListener('click', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [isCommentDropdownOpen]);
+
     return (
 
         <div style={{ marginBottom: windowWidth <= 768 ? '60px' : '0' }}>
@@ -632,6 +658,8 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             {showDropdown && (
                 <div style={{overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'50%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
                     <ul style={{ listStyle: 'none', padding: '0' }}>
+                        <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} >🎉Upcoming updates🎉</li>
+                        {/* onClick={}*/}
                         <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleEditProfileClick}>Edit profile</li>
                         {showEditProfileForm && (
                             <form   style={{  overflowY:'scroll',position: 'fixed', bottom: -1, left: 0, height:'99%',width: '100%', backgroundColor: 'white',  zIndex: '100',borderTopRightRadius:'20px',borderTopLeftRadius:'20px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)' }}>
@@ -664,32 +692,12 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                                             borderRadius: '50%',
                                             position:'absolute',
                                             left: '50%',
-                                            top: '15%',
+                                            top: '16%',
                                             transform: 'translate(-50%, -50%)'
                                         }}
                                     />
                                 </label>
-                                <input
-                                    type="text"
-                                    placeholder="Name"
-                                    value={newName}
-                                    onChange={handleNameChange}
-                                    style={{boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
-                                        marginBottom: '15px',
-                                        position:'relative',
-                                        left: '50%',
-                                        top: '37%',
-                                        transform: 'translate(-50%, -50%)',
-                                        paddingLeft: '18px',
-                                        fontFamily: 'Helvetica',
-                                        width: 'calc(90% - 25px)',
-                                        height: '40px',
-                                        background: 'rgba(255, 255, 255, 0.5)',
-                                        border: '1px solid #ccc',
-                                        fontSize: '18px',
-                                        zIndex: '1',
-                                        borderRadius: '11px',}}
-                                />
+
                                 <input
                                     type="text"
                                     placeholder="Branch"
@@ -740,11 +748,12 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                         )}
                         <li style={{ padding: '15px', cursor: 'pointer', fontFamily: 'Helvetica', fontSize: '18px', color: 'black' }} onClick={handleAboutClick}>About</li>
                         {showAboutOptions && (
-                            <div style={{position: 'relative', top: '0px', left: 0, height:'150px',width: '100%', backgroundColor: 'white',  zIndex: '100',borderRadius:'11px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
+                            <div style={{overflowY:'scroll',position: 'relative', top: '0px', left: 0, height:'200px',width: '100%', backgroundColor: 'white',  zIndex: '100',borderRadius:'11px', border:'0px solid #000',boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)'}}>
                                 <ul style={{ listStyle: 'none', padding: '0' }}>
-                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleLogout}>About RVConnect</li>
-                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleLogout}>Terms of Use</li>
-                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick={handleLogout}>Privacy Policy</li>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} onClick= {switchToAboutPage}  >About RVConnect</li>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} >Guildlines</li>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} >Terms of Use</li>
+                                    <li style={{ padding: '15px', cursor: 'pointer',fontFamily: 'Helvetica', fontSize: '18px', color:'black' }} >Privacy Policy</li>
                                 </ul>
                             </div>
                         )}
@@ -784,7 +793,12 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                 >
                     <b>Mentions</b>
                 </div>
-
+                {/*{activeTab === 'mentioned' && mentionedConfessionId && (*/}
+                {/*    // Fetch and display the mentioned confession content using mentionedConfessionId*/}
+                {/*    <div>*/}
+                {/*        /!* Fetch and display mentioned confession content using mentionedConfessionId *!/*/}
+                {/*    </div>*/}
+                {/*)}*/}
                 <div
                     className={`tab ${activeTab === 'friends' ? 'active' : ''}`}
                     onClick={() => handleTabClick('friends')}
@@ -870,7 +884,8 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
               </span>
                                     </button>
                                     {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
-                                        <div style={{
+                                        <div ref={commentDropdownRef}
+                                            style={{
                                             bottom: 60,
                                             overflowY: 'scroll',
                                             position: 'fixed',
@@ -976,7 +991,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
             )}
             {/* Bottom Navigation */}
             {isCommentDropdownOpen ? (
-                <div style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
+                <div ref={commentDropdownRef} style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
                     <div style={{ background: '#fff', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)', borderRadius: '11px', height: '155px', zIndex: '100', width: '100%', position: 'relative', top: '70px' }}>
                         <textarea
                             type="text"
@@ -1078,7 +1093,8 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
                         </span>
                                 </button>
                                 {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
-                                    <div style={{
+                                    <div ref={commentDropdownRef}
+                                        style={{
                                         bottom: 60,
                                         overflowY: 'scroll',
                                         position: 'fixed',
@@ -1187,7 +1203,7 @@ const ProfilePage = ({user ,activeTab='confessions', handleTabClick,usersData}) 
 
             {/* Bottom Navigation */}
             {isCommentDropdownOpen ? (
-                <div style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
+                <div ref={commentDropdownRef} style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
                     <div style={{ background: '#fff', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)', borderRadius: '11px', height: '155px', zIndex: '100', width: '100%', position: 'relative', top: '70px' }}>
                         <textarea
                             type="text"

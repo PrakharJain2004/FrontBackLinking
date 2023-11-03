@@ -30,6 +30,7 @@ const Dashboard = ({ user }) => {
     const [comments, setComments] = useState([]);
     const [selectedPostComments, setSelectedPostComments] = useState([]);
     const [selectedPostForDeletion, setSelectedPostForDeletion] = useState(null);
+    const commentDropdownRef = useRef(null);
 
     // Fetch the posts where the user is mentioned
     useEffect(() => {
@@ -366,6 +367,48 @@ const Dashboard = ({ user }) => {
             return (count / 1000000).toFixed(1) + 'M';
         }
     };
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isCommentDropdownOpen && commentDropdownRef.current && !commentDropdownRef.current.contains(event.target)) {
+                // Click occurred outside the comment dropdown
+                setCommentDropdownOpen(false);
+                setSelectedConfessionComments([]);
+                setSelectedConfessionId(null);
+            }
+        };
+
+        if (isCommentDropdownOpen) {
+            document.addEventListener('click', handleClickOutside);
+        } else {
+            document.removeEventListener('click', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [isCommentDropdownOpen]);
+
+    useEffect(() => {
+        const handleCommentDropdownOpen = () => {
+            // Disable scrolling when the comment dropdown is open
+            document.body.style.overflow = 'hidden';
+        };
+
+        const handleCommentDropdownClose = () => {
+            // Enable scrolling when the comment dropdown is closed
+            document.body.style.overflow = 'auto';
+        };
+
+        if (isCommentDropdownOpen) {
+            handleCommentDropdownOpen();
+        } else {
+            handleCommentDropdownClose();
+        }
+
+        return () => {
+            handleCommentDropdownClose();
+        };
+    }, [isCommentDropdownOpen]);
 
     return (
         <div style={{ marginBottom: windowWidth <= 768 ? '60px' : '0' }}>
@@ -434,7 +477,8 @@ const Dashboard = ({ user }) => {
 
                         </button>
                         {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
-                            <div style={{
+                            <div ref={commentDropdownRef}
+                                style={{
                                 bottom: 50,
                                 overflowY: 'scroll',
                                 position: 'fixed',
@@ -488,7 +532,7 @@ const Dashboard = ({ user }) => {
                                                 position: 'relative',
                                                 top: '-10px',
                                                 fontSize: '17px',
-                                            }}><b>{comment.user_commented.username || ''}</b></p>
+                                            }}><b>@{comment.user_commented.username || ''}</b></p>
                                             <p style={{
                                                 fontFamily: 'Helvetica',
                                                 position: 'relative',
@@ -539,7 +583,7 @@ const Dashboard = ({ user }) => {
                 </div>
             ))}
             {isCommentDropdownOpen ? (
-                <div style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
+                <div ref={commentDropdownRef} style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
                     <div style={{ background: '#fff', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)', borderRadius: '11px', height: '155px', zIndex: '100', width: '100%', position: 'relative', top: '70px' }}>
                         <textarea
                             type="text"

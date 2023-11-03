@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import menuIcon from './menuicon.png';
 import likeicon from "./likeicon.png";
 import dislikeicon from "./dislikeicon.png";
@@ -27,6 +27,10 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
     const [mentionsCommentCounts, setMentionsCommentCounts] = useState({});
     const [newComment, setNewComment] = useState('');
     const token = localStorage.getItem('token');
+    const [friends, setFriends] = useState([]);
+    const searchId = localStorage.getItem('searchId');
+    const commentDropdownRef = useRef(null);
+    const username = localStorage.getItem('username');
 
     const getColorSet = (colorCode) => {
         const colorMap = {
@@ -213,7 +217,122 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
         fetchMentions();
     }, []);
 
+    const fetchUserId = () => {
+        const username = localStorage.getItem('username');
+        const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/by-username/${username}/`;
 
+        axios
+            .get(apiUrl)
+            .then((response) => {
+                // Extract the user ID from the response
+                const userId = response.data.id;
+
+                // Call the fetchFriends function with the obtained user ID
+                fetchFriends(userId);
+            })
+            .catch((error) => {
+                console.error('Error fetching user ID:', error);
+            });
+    };
+
+    const handleUnfriend = (friendshipId, friendName) => {
+        // Send a PUT request to update the friendship status
+        const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/friendships/${friendshipId}/`;
+
+        axios
+            .put(apiUrl, { status: 'unfriended' })
+            .then((response) => {
+                // Check if the PUT request was successful
+                if (response.status === 200) {
+                    // Remove the friend from the filteredFriends array
+                    const updatedFilteredFriends = filteredFriends.filter((friend) => friend.fullName !== friendName);
+                    setFilteredFriends(updatedFilteredFriends);
+                } else {
+                    console.error('Error unfriending friend:', response.statusText);
+                }
+            })
+            .catch((error) => {
+                console.error('Error unfriending friend:', error);
+            });
+    };
+
+    const handleInputChange = (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        filterFriends(query);
+    };
+
+    const filterFriends = (query) => {
+        const filtered = friends.filter(
+            (friend) =>
+                friend.fullName.toLowerCase().includes(query.toLowerCase()) ||
+                friend.username.toLowerCase().includes(query.toLowerCase())
+        );
+        setFilteredFriends(filtered);
+    };
+
+    const fetchFriends = (userId) => {
+        // Construct the URL with the user's ID
+        const apiUrl = `https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/user-friends/${userId}/`;
+
+        axios
+            .get(apiUrl)
+            .then((response) => {
+                // Check if response.data is defined and is an array
+                if (Array.isArray(response.data)) {
+                    // Extract the list of friends from the response with a status of "accepted"
+                    const friendsList = response.data
+                        .filter((friendship) => friendship.status === 'accepted')
+                        .map((friendship) => {
+                            // Check if friendship object contains 'user' and 'friend' properties
+                            if (friendship.user && friendship.friend) {
+                                const friendUser =
+                                    friendship.friend.id === userId ? friendship.user : friendship.friend;
+                                // Check if friendUser object contains 'id', 'username', 'first_name', and 'last_name' properties
+                                if (
+                                    friendUser.id &&
+                                    friendUser.username &&
+                                    friendUser.first_name &&
+                                    friendUser.last_name
+                                ) {
+                                    const fullName = friendUser.first_name + ' ' + friendUser.last_name;
+                                    return {
+                                        id: friendUser.id,
+                                        username: friendUser.username,
+                                        fullName,
+                                        friendshipId: friendship.friendship_id, // Store the friendship_id
+                                    };
+                                } else {
+                                    console.error('Error fetching friends: Invalid friendUser data', friendUser);
+                                }
+                            } else {
+                                console.error('Error fetching friends: Invalid friendship data', friendship);
+                            }
+                        });
+
+                    // Remove undefined items from the friendsList array
+                    const filteredFriendsList = friendsList.filter((friend) => friend);
+
+                    // Update the state with the list of friends
+                    setFriends(filteredFriendsList);
+                    // Also, initially set filteredFriends to the entire list
+                    setFilteredFriends(filteredFriendsList);
+                } else {
+                    // Handle the case where response.data is not an array
+                    console.error('Error fetching friends: Response data is not an array', response.data);
+                }
+            })
+            .catch((error) => {
+                console.error('Error fetching friends:', error);
+            });
+    };
+
+    // Fetch friends data when the component is mounted or when searchId changes
+    useEffect(() => {
+        if (searchId) {
+            fetchFriends(searchId); // Fetch friends for the specified user
+        }
+    }, [searchId]);
 
 
     const formatTimeDifference = (confessionDate,mentionDate,handleTabClick) => {
@@ -265,44 +384,15 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
         const colors = ['#ff76b3', '#76cfff', '#FF7676FF', '#ffef76', '#9b76ff', '#76fd76',];
         return colors[index % colors.length];
     };
-    const handleUnfriend = (friendName) => {
-        // Create a copy of the user data
-        const updatedUserData = { ...user };
 
-        // Find the index of the friend to unfriend in the user's friends array
-        const friendIndex = updatedUserData.friends.findIndex((friend) => friend.name === friendName);
 
-        // Find the index of the friend to unfriend in the filteredFriends array
-        const filteredFriendIndex = filteredFriends.findIndex((friend) => friend.name === friendName);
-
-        // Remove the friend from the user's friends array if found
-        if (friendIndex !== -1) {
-            updatedUserData.friends.splice(friendIndex, 1);
-        }
-
-        // Remove the friend from the filteredFriends array if found
-        if (filteredFriendIndex !== -1) {
-            const updatedFilteredFriends = [...filteredFriends];
-            updatedFilteredFriends.splice(filteredFriendIndex, 1);
-            setFilteredFriends(updatedFilteredFriends);
-        }
-
-        // Update the user data with the modified friends list
-        setUserData(updatedUserData);
-    };
-    const handleInputChange = (e) => {
-        const query = e.target.value;
-        setSearchQuery(query);
-        filterFriends(query);
-    };
-
-    const filterFriends = (query) => {
-        // Access the 'user' state variable here
-        const filtered = user.friends.filter((friend) =>
-            friend.name.toLowerCase().includes(query.toLowerCase())
-        );
-        setFilteredFriends(filtered);
-    };
+    // const filterFriends = (query) => {
+    //     // Access the 'user' state variable here
+    //     const filtered = user.friends.filter((friend) =>
+    //         friend.name.toLowerCase().includes(query.toLowerCase())
+    //     );
+    //     setFilteredFriends(filtered);
+    // };
 
     const handleLikeDislike = (confessionId) => {
         const newLikeState = { ...likeState };
@@ -386,7 +476,8 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
     };
 
 
-    const handleFriendButtonClick = () => {
+
+    const checkFriendshipStatus = async () => {
         if (friendshipStatus === 'Friends') {
             // Send a friend request here (you can implement this logic)
             setFriendshipStatus('Request Sent');
@@ -400,6 +491,26 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
     };
 
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isCommentDropdownOpen && commentDropdownRef.current && !commentDropdownRef.current.contains(event.target)) {
+                // Click occurred outside the comment dropdown
+                setCommentDropdownOpen(false);
+                setSelectedConfessionComments([]);
+                setSelectedConfessionId(null);
+            }
+        };
+
+        if (isCommentDropdownOpen) {
+            document.addEventListener('click', handleClickOutside);
+        } else {
+            document.removeEventListener('click', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [isCommentDropdownOpen]);
 
 
     return (
@@ -415,7 +526,7 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
                 <br/>
                 <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-35px'}}>{profileData.branch}</p>
                 <p style={{fontFamily: 'Helvetica',position:'absolute', top: '-10px'}}>{profileData.bio}</p>
-                <button style={{ fontFamily: 'Helvetica', backgroundColor: '#000',color:'white', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px',marginTop: '25px',height:'35px',width:'100%'}}onClick={() => handleFriendButtonClick()}><b>{friendshipStatus}</b></button>
+                <button style={{ fontFamily: 'Helvetica', backgroundColor: '#000',color:'white', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px',marginTop: '25px',height:'35px',width:'100%'}}onClick={() => checkFriendshipStatus()}><b>{friendshipStatus}</b></button>
 
 
             </div>
@@ -501,7 +612,8 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
                         </span>
                                 </button>
                                 {isCommentDropdownOpen && selectedConfessionComments.length > 0 && (
-                                    <div style={{
+                                    <div ref={commentDropdownRef}
+                                        style={{
                                         bottom: 60,
                                         overflowY: 'scroll',
                                         position: 'fixed',
@@ -610,7 +722,7 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
 
             {/* Bottom Navigation */}
             {isCommentDropdownOpen ? (
-                <div style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
+                <div ref={commentDropdownRef} style={{ zIndex: '100', position: 'fixed', bottom: '10px', left: '0px', right: '0px' }}>
                     <div style={{ background: '#fff', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)', borderRadius: '11px', height: '155px', zIndex: '100', width: '100%', position: 'relative', top: '70px' }}>
                         <textarea
                             type="text"
@@ -654,34 +766,29 @@ const UserprofilePage = ({ activeTab = 'mentioned', handleTabClick, setUserData,
                 <>
                     <div >
 
-                        {/*<input*/}
-                        {/*    type="text"*/}
-                        {/*    placeholder="Search"*/}
-                        {/*    value={searchQuery}*/}
-                        {/*    onChange={handleInputChange}*/}
-                        {/*    style={{paddingLeft:'18px', fontFamily: 'Helvetica', width:'calc(100% - 22px)', height: '40px',background:'#efefef',border:'1px solid #ccc',fontSize:'20px',borderRadius: '11px',}}*/}
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            value={searchQuery}
+                            onChange={handleInputChange}
+                            style={{paddingLeft:'18px', fontFamily: 'Helvetica', width:'calc(100% - 22px)', height: '40px',background:'#efefef',border:'1px solid #ccc',fontSize:'20px',borderRadius: '11px',}}
 
-                        {/*/>*/}
-                        {/*{filteredFriends.map((friend, index) => (*/}
-                        {/*    <div key={index} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #ccc', padding: '0px 0' }}>*/}
-                        {/*        <img src={friend.image} style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} />*/}
-                        {/*        <div style={{ flex: '1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>*/}
-                        {/*            <div>*/}
-                        {/*                <p style={{ fontFamily: 'Helvetica', color: '#000', fontSize: '17px', position: 'relative', top: '4px', margin: '10px' }}><b>{friend.name}</b></p>*/}
-                        {/*                <p style={{ fontFamily: 'Helvetica', color: '#8f8f8f', position: 'relative', top: '-2px', fontSize: '17px', margin: '10px' }}>@{friend.username}</p>*/}
-                        {/*            </div>*/}
-                        {/*            <button style={{ fontFamily: 'Helvetica', backgroundColor: 'white', padding: '6px 10px', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px' }} onClick={() => handleUnfriend(friend.name)}><b>Unfriend</b></button>*/}
-                        {/*        </div>*/}
-                        {/*    </div>*/}
-                        {/*))}*/}
+                        />
+                        {filteredFriends.map((friend, index) => (
+                            <div key={index} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #ccc', padding: '0px 0' }}>
+                                <img src={friend.image} style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }} />
+                                <div style={{ flex: '1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ fontFamily: 'Helvetica', color: '#000', fontSize: '17px', position: 'relative', top: '4px', margin: '10px' }}><b>{friend.fullName}</b></p>
+                                        <p style={{ fontFamily: 'Helvetica', color: '#8f8f8f', position: 'relative', top: '-2px', fontSize: '17px', margin: '10px' }}>@{friend.username}</p>
+                                    </div>
+                                    {/*<button style={{ fontFamily: 'Helvetica', backgroundColor: 'white', padding: '6px 10px', border: '1.2px solid #ccc', borderRadius: '10px', fontSize: '17px' }} onClick={() => handleUnfriend(friend.friendshipId)}><b>Unfriend</b></button>*/}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </>
             )}
-            {/*{activeTab === 'clubs' && (*/}
-            {/*    <>*/}
-            {/*        /!* Render clubs content here *!/*/}
-            {/*    </>*/}
-            {/*)}*/}
 
 
 

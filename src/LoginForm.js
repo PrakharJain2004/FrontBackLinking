@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import rvclogo from './rvclogo.png';
+import CrossIcon from "./cross.png";
 
 function LoginForm({ setIsAuthenticated }) {
     const [formData, setFormData] = useState({
@@ -27,6 +28,8 @@ function LoginForm({ setIsAuthenticated }) {
 
     const [error, setError] = useState('');
     const [isSignup, setIsSignup] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [isOTPVerified, setIsOTPVerified] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -36,6 +39,7 @@ function LoginForm({ setIsAuthenticated }) {
         });
     };
 
+
     const handleSignupChange = (e) => {
         const { name, value } = e.target;
         setSignupData({
@@ -43,6 +47,58 @@ function LoginForm({ setIsAuthenticated }) {
             [name]: value,
         });
     };
+
+    const handleSignupSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            // Check if password and confirm password match
+            if (signupData.password !== signupData.confirmpassword) {
+                setError('Passwords do not match. Please try again.');
+                return;
+            }
+
+            // Extract username from email
+            const username = signupData.email.split('@')[0];
+
+            // Send a POST request to the signup endpoint
+            const response = await axios.post(
+                'https://p8u4dzxbx2uzapo8hev0ldeut0xcdm.pythonanywhere.com/users/',
+                {
+                    username: username,
+                    first_name: signupData.firstname,
+                    last_name: signupData.lastname,
+                    password: signupData.password,
+                    email: signupData.email
+                }
+            );
+
+            // Check the status code to determine if the signup was successful
+            if (response.status === 201) {
+                // Clear error message
+                setError('');
+
+                window.location.reload()
+
+                // Reset the signup form fields
+                setIsSignup(false);
+                setSignupData({
+                    email: '',
+                    firstname: '',
+                    lastname: '',
+                    password: '',
+                    confirmpassword: '',
+                });
+            } else {
+                setError('Signup failed. Please try again.');
+            }
+        } catch (error) {
+            // Handle errors here...
+            setError('Signup failed. Please try again.');
+        }
+    };
+
+
 
     const handleTabChange = (isSignup) => {
         setIsSignup(isSignup);
@@ -105,25 +161,36 @@ function LoginForm({ setIsAuthenticated }) {
         };
     }, []);
 
-    const handleSignupSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            // Check if password and confirm password match
-            if (signupData.password !== signupData.confirmpassword) {
-                setError('Passwords do not match. Please try again.');
-                return;
-            }
-
-            // Send a POST request to the authentication endpoint for signup...
-            // Update the authentication status
-            setIsAuthenticated(true);
-            // Clear error message
-            setError('');
-        } catch (error) {
-            // Handle errors here...
-        }
+    const toggleForgotPassword = () => {
+        setShowForgotPassword(!showForgotPassword); // Step 3
     };
+    const closeDropdown = () => {
+        setShowForgotPassword(false);
+    };
+    const handleVerifyOTP = () => {
+        // Add your logic to verify the OTP here
+        setIsOTPVerified(true); // Set isOTPVerified to true upon successful OTP verification
+    };
+
+    // const handleSignupSubmit = async (e) => {
+    //     e.preventDefault();
+    //
+    //     try {
+    //         // Check if password and confirm password match
+    //         if (signupData.password !== signupData.confirmpassword) {
+    //             setError('Passwords do not match. Please try again.');
+    //             return;
+    //         }
+    //
+    //         // Send a POST request to the authentication endpoint for signup...
+    //         // Update the authentication status
+    //         setIsAuthenticated(true);
+    //         // Clear error message
+    //         setError('');
+    //     } catch (error) {
+    //         // Handle errors here...
+    //     }
+    // };
 
     const shadowAnimation = {
 
@@ -343,6 +410,132 @@ function LoginForm({ setIsAuthenticated }) {
                     <button type="submit"
                             style={{  boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',color:'#fff', fontFamily: 'Helvetica', width: 'calc(100% - 25px)', height: '40px',background:'#000',border:'1px solid #ccc',fontSize:'18px',borderRadius: '50px',}}
                     >Log In</button>
+                    <div>
+                        <a href="#" onClick={toggleForgotPassword} style={{ fontFamily: 'Helvetica', textDecoration: 'underline', cursor: 'pointer', color: '#000', position: 'relative', top: '18px' }}>
+                            Forgot Password?
+                        </a>
+                    </div>
+
+                    {showForgotPassword ? (
+                        <div style={{ overflowY: 'scroll', position: 'fixed', bottom: -1, left: 0, height: '99%', width: '100%', backgroundColor: 'white', zIndex: '100', borderTopRightRadius: '20px', borderTopLeftRadius: '20px', border: '0px solid #000', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)' }}>
+                            <img src={CrossIcon} alt="Close" onClick={closeDropdown} style={{ width: '15px', height: '15px' ,float:'left',position:'absolute',top:'20px',left:'20px'}} />
+                            {isOTPVerified ? (
+                                <div>
+                                    <p style={{ fontFamily: 'Helvetica', fontSize: '30px' }}><b>Create New Password</b></p>
+                                    <p style={{ fontFamily: 'Helvetica' }}>Enter your new password:</p>
+                                    <input
+                                        type="password"
+                                        placeholder="New Password"
+                                        // Add onChange and value attributes as needed
+                                        style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            marginBottom: '15px',
+                                            paddingLeft: '18px',
+                                            fontFamily: 'Helvetica',
+                                            width: 'calc(90% - 25px)',
+                                            height: '40px',
+                                            background: 'rgba(255, 255, 255, 0.5)',
+                                            border: '1px solid #ccc',
+                                            fontSize: '18px',
+                                            zIndex: '1',
+                                            borderRadius: '11px',
+                                        }}
+                                    />
+                                    <p style={{ fontFamily: 'Helvetica' }}>Confirm your new password:</p>
+                                    <input
+                                        type="password"
+                                        placeholder="Confirm Password"
+                                        // Add onChange and value attributes as needed
+                                        style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            marginBottom: '15px',
+                                            paddingLeft: '18px',
+                                            fontFamily: 'Helvetica',
+                                            width: 'calc(90% - 25px)',
+                                            height: '40px',
+                                            background: 'rgba(255, 255, 255, 0.5)',
+                                            border: '1px solid #ccc',
+                                            fontSize: '18px',
+                                            zIndex: '1',
+                                            borderRadius: '11px',
+                                        }}
+                                    />
+                                    <div style={{ textAlign: 'center' }}>
+                                        <button style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            color: '#fff',
+                                            fontFamily: 'Helvetica',
+                                            width: '150px',
+                                            height: '40px',
+                                            background: '#000',
+                                            border: '1px solid #ccc',
+                                            fontSize: '15px',
+                                            borderRadius: '11px',
+                                        }}>
+                                            Change
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p style={{ fontFamily: 'Helvetica', fontSize: '30px' }}><b>Forgot Password</b></p>
+                                    <p style={{ fontFamily: 'Helvetica' }}>Enter your email address to reset your password:</p>
+                                    <input
+                                        type="text"
+                                        placeholder="Email"
+                                        // Add onChange and value attributes as needed
+                                        style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            marginBottom: '15px',
+                                            paddingLeft: '18px',
+                                            fontFamily: 'Helvetica',
+                                            width: 'calc(90% - 25px)',
+                                            height: '40px',
+                                            background: 'rgba(255, 255, 255, 0.5)',
+                                            border: '1px solid #ccc',
+                                            fontSize: '18px',
+                                            zIndex: '1',
+                                            borderRadius: '11px',
+                                        }}
+                                    />
+                                    <p style={{ fontFamily: 'Helvetica' }}>Enter the OTP sent to your email:</p>
+                                    <input
+                                        type="text"
+                                        placeholder="OTP"
+                                        // Add onChange and value attributes as needed
+                                        style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            marginBottom: '15px',
+                                            paddingLeft: '18px',
+                                            fontFamily: 'Helvetica',
+                                            width: 'calc(90% - 25px)',
+                                            height: '40px',
+                                            background: 'rgba(255, 255, 255, 0.5)',
+                                            border: '1px solid #ccc',
+                                            fontSize: '18px',
+                                            zIndex: '1',
+                                            borderRadius: '11px',
+                                        }}
+                                    />
+                                    <div style={{ textAlign: 'center' }}>
+                                        <button onClick={handleVerifyOTP}  style={{
+                                            boxShadow: '0px 3px 6px rgba(0, 0, 0, 0.9)',
+                                            color: '#fff',
+                                            fontFamily: 'Helvetica',
+                                            width: '150px',
+                                            height: '40px',
+                                            background: '#000',
+                                            border: '1px solid #ccc',
+                                            fontSize: '15px',
+                                            borderRadius: '11px',
+                                        }}>
+                                            Verify OTP
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : null}
                 </form>
             )}
 

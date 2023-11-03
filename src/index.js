@@ -11,12 +11,18 @@ import postIcon from './posticon.png';
 import profileIcon from './profileicon.png';
 import searchIcon from './searchicon.png';
 import { BrowserRouter } from 'react-router-dom';
+import AboutPage from './AboutPage';
+import notificationIcon from './notificationicon.png';
+import NotificationPage from "./NotificationPage";
+import SplashScreen from './SplashScreen';
 
 const App = (user) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [activeTab, setActiveTab] = useState('confessions');
+    // const [mentionedConfessionId, setMentionedConfessionId] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [userData, setUserData] = useState({
         confessions: [
@@ -79,18 +85,18 @@ const App = (user) => {
             // ... other posts
         ],
 
-        // friends: [
-        //     { name: 'Friend1', username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png'},
-        //     { name: 'Friend2',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
-        //     { name: 'Friend3',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
-        //     { name: 'Friend1', username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png'},
-        //     { name: 'Friend2',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
-        //     { name: 'Friend3',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
-        //     { name: 'Friend1', username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png'},
-        //     { name: 'Friend2',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
-        //     { name: 'Friend3',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
-        //     // Add more friends as needed
-        // ],
+        friends: [
+            { name: 'Friend1', username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png'},
+            { name: 'Friend2',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
+            { name: 'Friend3',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
+            { name: 'Friend1', username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png'},
+            { name: 'Friend2',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
+            { name: 'Friend3',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
+            { name: 'Friend1', username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png'},
+            { name: 'Friend2',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
+            { name: 'Friend3',username:'abc',image: 'C:/Users/Prakhar Jain/OneDrive/Pictures/Harshit.png' },
+            // Add more friends as needed
+        ],
     });
 
     const [usersData, setUsersData] = useState([
@@ -103,6 +109,10 @@ const App = (user) => {
     const switchToPostPage = () => {
         setCurrentPage('postPage');
 
+    };
+
+    const switchToNotificationPage = () => {
+        setCurrentPage('notificationPage');
     };
 
     const switchToDashboard = () => {
@@ -118,6 +128,10 @@ const App = (user) => {
     const switchToSearchPage = () => {
         setCurrentPage('searchPage');
 
+    };
+
+    const switchToAboutPage = () => {
+        setCurrentPage('aboutPage');
     };
 
     const handleTabClick = (tab) => {
@@ -146,72 +160,85 @@ const App = (user) => {
         }
     }, []);
 
+    const [notifications, setNotifications] = useState([]); // State to hold notifications
+    //
+    // // Function to check for mentions and add notifications
+    // const checkMentions = () => {
+    //     const mentions = userData.confessions.filter((confession) =>
+    //         confession.content.includes(`@${userData.username}`)
+    //     );
+    //
+    //     const newNotifications = mentions.map((mention) => ({
+    //         text: 'Someone has mentioned you in a confession',
+    //         time: mention.date_posted,
+    //     }));
+    //
+    //     setNotifications(newNotifications);
+    // };
+    //
+    // // Check for mentions when user data changes
+    // useEffect(() => {
+    //     checkMentions();
+    // }, [userData]);
+    //
+    // const openMentionedConfession = (mentionedConfessionId) => {
+    //     setCurrentPage('profilePage');
+    //     setActiveTab('mentioned');
+    //     setMentionedConfessionId(mentionedConfessionId);
+    // };
+
+    useEffect(() => {
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 1500);
+    }, []);
+
     return (
         <div>
-            <nav>
-                {isAuthenticated && windowWidth <= 768 && (
-                    <div style={{ borderRadius:'11px', display: 'flex', justifyContent: 'space-around', fontSize: '33px', border: '0px solid #808080', marginBottom:'-1px', padding: '13px', position: 'fixed', bottom: '0', left: '0', right: '0', backgroundColor: '#ffffff', zIndex: '100', width: '100%', boxSizing: 'border-box', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)', }}>
-                        <img
-                            src={homeIcon}
-                            onClick={() => switchToDashboard('dashboard')}
-                            style={{
-                                borderRadius:'50%',
-                                width: '31px',
-                                height: '31px',
-                                transform: currentPage === 'dashboard' ? 'scale(1.3)' : 'scale(1)',
-                            }}
-                        />
-                        <img
-                            src={searchIcon}
-                            onClick={() => switchToSearchPage('searchPage')}
-                            style={{
-                                borderRadius:'50%',
-                                width: '31px',
-                                height: '31px',
-                                transform: currentPage === 'searchPage' ? 'scale(1.3)' : 'scale(1)',
-                            }}
-                        />
-                        <img
-                            src={postIcon}
-                            onClick={() => switchToPostPage('postPage')}
-                            style={{
-                                borderRadius:'30%',
-                                width: '31px',
-                                height: '31px',
-                                transform: currentPage === 'postPage' ? 'scale(1.3)' : 'scale(1)',
-                            }}
-                        />
-                        <img
-                            src={profileIcon}
-                            onClick={() => switchToProfilePage('profilePage')}
-                            style={{
-                                borderRadius:'50%',
-                                width: '31px',
-                                height: '31px',
-                                transform: currentPage === 'profilePage' ? 'scale(1.3)' : 'scale(1)',
-                            }}
-                        />
-                    </div>
-                )}
-                {/* Other navigation elements */}
-            </nav>
-
-            {isAuthenticated ? (
-                // Render other pages when the user is authenticated
-                <>
-                    {currentPage === 'dashboard' && <Dashboard user={userData} />}
-                    {currentPage === 'postPage' && <PostPage switchToDashboard={switchToDashboard} users={usersData} />}
-                    {currentPage === 'profilePage' && <ProfilePage user={userData} activeTab={activeTab} handleTabClick={handleTabClick} setUserData={setUserData} />}
-                    {currentPage === 'searchPage' && (
-                        <SearchPage usersData={usersData} setCurrentPage={switchToUserprofilePage} />
-                    )}
-                    {currentPage === 'userprofilePage' && (
-                        <UserprofilePage user={userData} activeTab={activeTab} handleTabClick={handleTabClick} setUserData={setUserData} switchToSearchPage={switchToSearchPage} />
-                    )}
-                </>
+            {isLoading ? (
+                <SplashScreen />
             ) : (
-                // Render the login form when the user is not authenticated
-                <LoginForm setIsAuthenticated={setIsAuthenticated} />
+                <div>
+                    <nav>
+                        {isAuthenticated && windowWidth <= 768 && currentPage !== 'aboutPage' && (
+                            <div style={{ height: '70px', borderRadius: '11px', display: 'flex', justifyContent: 'space-around', fontSize: '33px', border: '0px solid #808080', marginBottom: '-1px', padding: '13px', position: 'fixed', bottom: '-10px', left: '0', right: '0', backgroundColor: '#ffffff', zIndex: '100', width: '100%', boxSizing: 'border-box', boxShadow: '0px 3px 9px rgba(0, 0, 0, 1)' }}>
+                                <img src={homeIcon} onClick={switchToDashboard} style={{ borderRadius: '50%', width: '31px', height: '31px', transform: currentPage === 'dashboard' ? 'scale(1.3)' : 'scale(1)' }} />
+                                <img src={searchIcon} onClick={switchToSearchPage} style={{ borderRadius: '50%', width: '31px', height: '31px', transform: currentPage === 'searchPage' ? 'scale(1.3)' : 'scale(1)' }} />
+                                <img
+                                    src={postIcon}
+                                    onClick={() => switchToPostPage('postPage')}
+                                    style={{
+                                        borderRadius:'30%',
+                                        width: '31px',
+                                        height: '31px',
+                                        transform: currentPage === 'postPage' ? 'scale(1.3)' : 'scale(1)',
+                                    }}
+                                />
+                                <img src={notificationIcon} onClick={switchToNotificationPage} style={{ borderRadius: '30%', width: '31px', height: '31px', transform: currentPage === 'notificationPage' ? 'scale(1.3)' : 'scale(1)' }} />
+                                <img src={profileIcon} onClick={switchToProfilePage} style={{ borderRadius: '50%', width: '31px', height: '31px', transform: currentPage === 'profilePage' ? 'scale(1.3)' : 'scale(1)' }} />
+                            </div>
+                        )}
+                        {/* Other navigation elements */}
+                    </nav>
+                    {isAuthenticated ? (
+                        <>
+                            {currentPage === 'dashboard' && <Dashboard user={userData} />}
+                            {currentPage === 'postPage' && <PostPage switchToDashboard={switchToDashboard} users={usersData} />}
+                            {currentPage === 'profilePage' && <ProfilePage user={userData} activeTab={activeTab} handleTabClick={handleTabClick} setUserData={setUserData} switchToAboutPage={switchToAboutPage}  />}
+                            {/*mentionedConfessionId={mentionedConfessionId}*/}
+                            {currentPage === 'searchPage' && (
+                                <SearchPage usersData={usersData} setCurrentPage={switchToUserprofilePage} />
+                            )}
+                            {currentPage === 'userprofilePage' && <UserprofilePage user={userData} activeTab={activeTab} handleTabClick={handleTabClick} setUserData={setUserData} switchToSearchPage={switchToSearchPage} />}
+                            {currentPage === 'aboutPage' && <AboutPage />}
+                            {currentPage === 'notificationPage' && <NotificationPage notifications={notifications} switchToProfilePage={switchToProfilePage}  />}
+                            {/*openMentionedConfession={openMentionedConfession}*/}
+                        </>
+                    ) : (
+                        // Render the login form when the user is not authenticated
+                        <LoginForm setIsAuthenticated={setIsAuthenticated} />
+                    )}
+                </div>
             )}
         </div>
     );
